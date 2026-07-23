@@ -42,4 +42,3 @@ next-env.d.ts
 /work/
 /.pnpm-store/
 /dev-server*.log
-/pnpm-lock.yaml
