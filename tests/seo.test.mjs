@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { SITE_URL, SEO_COPY, seoMetadata, webApplicationSchema } from "../app/seo.js";
 import robots from "../app/robots.js";
@@ -20,4 +21,12 @@ test("publishes crawlable robots and a single canonical sitemap URL", () => {
   assert.equal(rules.rules.allow, "/");
   assert.equal(rules.sitemap, `${SITE_URL}/sitemap.xml`);
   assert.deepEqual(entries.map(({ url }) => url), [SITE_URL]);
+});
+
+test("renders a dedicated Chinese search explanation section", async () => {
+  const component = await readFile(new URL("../app/SeoContent.tsx", import.meta.url), "utf8");
+  assert.match(component, /槽极配是什么/);
+  assert.match(component, /槽极配合计算：槽数与极数怎么算/);
+  assert.match(component, /如何使用本生成器/);
+  assert.match(component, /SEO_COPY/);
 });

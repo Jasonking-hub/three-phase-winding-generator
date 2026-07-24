@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import SeoContent from "./SeoContent";
 import { generateWinding } from "./winding.js";
 
 const PHASE_CLASS: Record<string, string> = {
@@ -171,6 +172,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <SeoContent />
     </main>
   );
 }

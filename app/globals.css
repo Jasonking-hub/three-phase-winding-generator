@@ -93,6 +93,17 @@ tbody tr:hover { background: #f0f6fd; }
 .connection-card strong { color: var(--ink); font-size: 15px; line-height: 1.5; }
 .terminal { justify-self: start; border: 1px solid currentColor; border-radius: 6px; padding: 5px 8px; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 13px; font-weight: 800; }
 
+.seo-content { margin-top: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 28px; }
+.seo-copy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+.seo-copy-grid article { border-left: 3px solid var(--blue); background: #f7faff; padding: 18px; }
+.seo-copy-grid h3, .seo-faq h3 { margin: 0 0 8px; font-size: 16px; }
+.seo-copy-grid p, .seo-faq p { margin-bottom: 0; color: var(--muted); line-height: 1.7; }
+.seo-faq { margin-top: 22px; }
+.seo-faq details { border-top: 1px solid var(--line); padding: 14px 0; }
+.seo-faq details:last-child { border-bottom: 1px solid var(--line); }
+.seo-faq summary { color: #26354a; cursor: pointer; font-weight: 800; }
+.seo-faq details p { padding-top: 8px; }
+
 @media (max-width: 860px) {
   .site-shell { padding: 24px 16px 36px; }
   .masthead, .result-heading { flex-direction: column; }
@@ -100,6 +111,7 @@ tbody tr:hover { background: #f0f6fd; }
   .workspace { grid-template-columns: 1fr; }
   .control-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .connection-grid { grid-template-columns: 1fr; }
+  .seo-copy-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {
