@@ -62,11 +62,7 @@ export default function Home() {
   return (
     <main className="site-shell">
       <header className="masthead">
-        <div>
-          <p className="kicker">三相双层绕组</p>
-          <h1>槽极配生成器</h1>
-          <p className="intro">输入槽数和总极数，即时生成与原工作簿一致的线圈接线表。</p>
-        </div>
+        <h1>槽极配生成器</h1>
         <button className="secondary-button" type="button" onClick={resetExample}>恢复示例</button>
       </header>
 
@@ -137,15 +133,15 @@ export default function Home() {
               <table>
                 <thead>
                   <tr>
-                    <th>线圈</th><th>上层槽</th><th>下层槽</th><th>相别</th><th>上层标记</th><th>下层标记</th><th>接线标记</th><th>组极性</th><th>线圈电角°</th><th>状态</th>
+                    <th>线圈</th><th>相别</th><th>线圈标记</th><th>组极性</th><th>线圈电角°</th><th>状态</th>
                   </tr>
                 </thead>
                 <tbody>
                   {winding.rows.map((row) => (
                     <tr key={row.coil}>
-                      <td>{row.coil}</td><td>{row.upperSlot}</td><td>{row.lowerSlot}</td>
+                      <td>{row.coil}</td>
                       <td><span className={`phase-chip ${PHASE_CLASS[row.displayPhase]}`}>{row.displayPhase}</span></td>
-                      <td>{row.upperMark}</td><td>{row.lowerMark}</td><td className="connection-cell">{row.connection}</td>
+                      <td>{row.upperMark}</td>
                       <td>{row.polarity}</td><td>{row.electricalAngle}</td><td><span className="ok-label">OK</span></td>
                     </tr>
                   ))}
@@ -155,8 +151,8 @@ export default function Home() {
           ) : (
             <div className="empty-state">输入有效的 Q 和 P 后显示完整接线表。</div>
           )}
-          <WindingDiagram winding={winding} />
         </section>
+        <WindingDiagram winding={winding} resetKey={`${slots}:${poles}`} />
       </section>
 
       <section className="connection-section" aria-labelledby="connection-title">

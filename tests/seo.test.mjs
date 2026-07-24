@@ -56,11 +56,19 @@ test("renders a three-phase coil-only connection diagram", async () => {
   assert.match(component, /#007a70/);
 });
 
-test("places the winding diagram below the connection table with requested title and colors", async () => {
+test("renders the approved compact title and six-column winding table", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(page, /槽极配生成器/);
-  assert.match(page, /<WindingDiagram winding={winding} \/>/);
+  assert.doesNotMatch(page, /className="kicker"/);
+  assert.doesNotMatch(page, /className="intro"/);
+  assert.match(page, /<th>线圈标记<\/th>/);
+  assert.doesNotMatch(page, /<th>上层槽<\/th>/);
+  assert.doesNotMatch(page, /<th>下层槽<\/th>/);
+  assert.doesNotMatch(page, /<th>上层标记<\/th>/);
+  assert.doesNotMatch(page, /<th>下层标记<\/th>/);
+  assert.match(page, /<td>{row\.upperMark}<\/td>/);
+  assert.match(page, /resetKey={`\$\{slots\}:\$\{poles\}`}/);
   assert.match(css, /\.winding-diagram/);
   assert.match(css, /--a: #bc6200/);
   assert.match(css, /--b: #245ba9/);

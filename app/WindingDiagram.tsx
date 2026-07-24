@@ -32,7 +32,12 @@ function coilPath(startX: number, endX: number, coilY: number) {
   return `M ${left} 314 V ${coilY + 10} Q ${left} ${coilY} ${left + 10} ${coilY} H ${right - 10} Q ${right} ${coilY} ${right} ${coilY + 10} V 314`;
 }
 
-export default function WindingDiagram({ winding }: { winding: WindingResult }) {
+export default function WindingDiagram({
+  winding,
+}: {
+  winding: WindingResult;
+  resetKey: string;
+}) {
   if (!winding.valid) {
     return <div className="diagram-empty">输入有效的 Q 和 P 后显示三相接线图。</div>;
   }
