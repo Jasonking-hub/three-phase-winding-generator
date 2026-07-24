@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import SeoContent from "./SeoContent";
+import WindingDiagram from "./WindingDiagram";
 import { generateWinding } from "./winding.js";
 
 const PHASE_CLASS: Record<string, string> = {
@@ -63,7 +64,7 @@ export default function Home() {
       <header className="masthead">
         <div>
           <p className="kicker">三相双层绕组</p>
-          <h1>槽极配与线圈接线表</h1>
+          <h1>槽极配生成器</h1>
           <p className="intro">输入槽数和总极数，即时生成与原工作簿一致的线圈接线表。</p>
         </div>
         <button className="secondary-button" type="button" onClick={resetExample}>恢复示例</button>
@@ -154,6 +155,7 @@ export default function Home() {
           ) : (
             <div className="empty-state">输入有效的 Q 和 P 后显示完整接线表。</div>
           )}
+          <WindingDiagram winding={winding} />
         </section>
       </section>
 

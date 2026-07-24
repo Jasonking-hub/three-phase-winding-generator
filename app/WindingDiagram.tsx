@@ -48,7 +48,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
         <p>同相线圈按主线串联。槽号与正负端随当前相别同步更新。</p>
       </div>
       <div className="diagram-scroll">
-        <svg viewBox={`0 0 ${width} 440`} role="img" aria-label="三相线圈接线图">
+        <svg viewBox={`0 0 ${width} 440`} style={{ width }} role="img" aria-label="三相线圈接线图">
           <title>三相线圈接线图</title>
           <line className="diagram-baseline" x1="54" x2={width - 24} y1="314" y2="314" />
           {winding.rows.map((row) => {

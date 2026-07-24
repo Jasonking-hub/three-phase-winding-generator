@@ -8,10 +8,10 @@
   --paper: #ffffff;
   --blue: #1c5d99;
   --blue-soft: #e7f1fb;
-  --a: #245ba9;
-  --a-soft: #e8f0fc;
-  --b: #bc6200;
-  --b-soft: #fff0df;
+  --a: #bc6200;
+  --a-soft: #fff0df;
+  --b: #245ba9;
+  --b-soft: #e8f0fc;
   --c: #007a70;
   --c-soft: #e0f7f3;
 }
@@ -28,8 +28,8 @@ body {
 button, input { font: inherit; }
 button { cursor: pointer; }
 
-.site-shell { max-width: 1480px; margin: 0 auto; padding: 40px 28px 52px; }
-.masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+.site-shell { max-width: 1480px; margin: 0 auto; padding: 22px 28px 52px; }
+.masthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
 .kicker { margin: 0 0 8px; color: var(--blue); font-size: 14px; font-weight: 800; letter-spacing: .08em; }
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 10px; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.04em; line-height: 1.08; }
@@ -83,6 +83,22 @@ tbody tr:hover { background: #f0f6fd; }
 .ok-label { background: #e8f6ef; color: #16663f; padding: 3px 7px; }
 .empty-state { display: grid; place-items: center; min-height: 260px; border: 1px dashed #b7c4d4; border-radius: 8px; color: var(--muted); }
 
+.winding-diagram { margin-top: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+.diagram-heading { padding: 18px 20px 0; }
+.diagram-heading h3 { margin: 0 0 5px; font-size: 17px; }
+.diagram-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.diagram-scroll { overflow-x: auto; padding: 16px 0 8px; }
+.diagram-scroll svg { display: block; min-width: 820px; height: auto; }
+.diagram-baseline { stroke: #506073; stroke-width: 1.5; }
+.diagram-slot line { stroke: #aebdce; stroke-width: 1; }
+.diagram-slot text { fill: #536175; font-size: 12px; text-anchor: middle; }
+.diagram-phase-label, .diagram-terminal { fill: currentColor; font-size: 14px; font-weight: 800; }
+.diagram-bus { fill: none; stroke: currentColor; stroke-width: 2; }
+.diagram-lead { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .48; }
+.diagram-coil { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 4; }
+.diagram-mark { fill: currentColor; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 12px; font-weight: 800; text-anchor: middle; }
+.diagram-empty { display: grid; place-items: center; min-height: 220px; margin-top: 24px; border: 1px dashed #b7c4d4; border-radius: 10px; color: var(--muted); }
+
 .connection-section { margin-top: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 28px; }
 .connection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
 .connection-card { display: grid; gap: 12px; border-radius: 10px; padding: 18px; }
@@ -105,13 +121,14 @@ tbody tr:hover { background: #f0f6fd; }
 .seo-faq details p { padding-top: 8px; }
 
 @media (max-width: 860px) {
-  .site-shell { padding: 24px 16px 36px; }
+  .site-shell { padding: 16px 16px 36px; }
   .masthead, .result-heading { flex-direction: column; }
   .phase-key { justify-content: flex-start; }
   .workspace { grid-template-columns: 1fr; }
   .control-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .connection-grid { grid-template-columns: 1fr; }
   .seo-copy-grid { grid-template-columns: 1fr; }
+  .diagram-heading { padding: 16px 16px 0; }
 }
 
 @media (max-width: 520px) {

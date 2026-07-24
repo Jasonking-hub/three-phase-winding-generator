@@ -55,3 +55,21 @@ test("renders a three-phase coil-only connection diagram", async () => {
   assert.match(component, /#245ba9/);
   assert.match(component, /#007a70/);
 });
+
+test("places the winding diagram below the connection table with requested title and colors", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(page, /槽极配生成器/);
+  assert.match(page, /<WindingDiagram winding={winding} \/>/);
+  assert.match(css, /\.winding-diagram/);
+  assert.match(css, /--a: #bc6200/);
+  assert.match(css, /--b: #245ba9/);
+  assert.match(css, /--c: #007a70/);
+});
+
+test("preserves full diagram width for high slot counts", async () => {
+  const component = await readFile(new URL("../app/WindingDiagram.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(component, /style={{ width }}/);
+  assert.doesNotMatch(css, /\.diagram-scroll svg \{[^}]*width: 100%/);
+});
