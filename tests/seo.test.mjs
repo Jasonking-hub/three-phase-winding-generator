@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import { SITE_URL, SEO_COPY, seoMetadata, webApplicationSchema } from "../app/seo.js";
 import robots from "../app/robots.js";
@@ -29,4 +29,9 @@ test("renders a dedicated Chinese search explanation section", async () => {
   assert.match(component, /槽极配合计算：槽数与极数怎么算/);
   assert.match(component, /如何使用本生成器/);
   assert.match(component, /SEO_COPY/);
+});
+
+test("ships a slot pole social preview image", async () => {
+  await access(new URL("../public/og.png", import.meta.url));
+  assert.deepEqual(seoMetadata.openGraph.images, ["/og.png"]);
 });

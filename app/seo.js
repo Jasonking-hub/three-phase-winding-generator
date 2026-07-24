@@ -18,6 +18,7 @@ export const seoMetadata = {
     url: SITE_URL,
     title: "槽极配生成器 | 槽极配合计算",
     description: "计算三相双层绕组的槽极配、节距、相别和线圈接线。",
+    images: ["/og.png"],
   },
 };
 
