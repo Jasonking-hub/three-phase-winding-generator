@@ -28,44 +28,83 @@ export function coilConnectionEndpoints(coil, geometry) {
     : { entryX: geometry.leftX, exitX: geometry.rightX };
 }
 
-export function buildSeriesRoute(
+export function buildPhaseRouteLayouts(
+  groups,
+  startY,
+  laneGap,
+  phaseGap,
+) {
+  let nextStartY = startY;
+
+  return groups.map((group) => {
+    const laneYs = Array.from(
+      { length: group.coils.length + 1 },
+      (_, index) => nextStartY + index * laneGap,
+    );
+    const layout = {
+      phase: group.phase,
+      laneYs,
+      startY: laneYs[0],
+      endY: laneYs[laneYs.length - 1],
+    };
+    nextStartY = layout.endY + phaseGap;
+    return layout;
+  });
+}
+
+export function buildSeriesRouteSegments(
   coils,
   geometryByCoil,
-  routeY,
+  laneYs,
   startX,
   endX,
 ) {
-  if (coils.length === 0) return "";
+  if (coils.length === 0 || laneYs.length !== coils.length + 1) return [];
 
   const firstGeometry = geometryByCoil.get(coils[0].coil);
   const lastGeometry = geometryByCoil.get(coils[coils.length - 1].coil);
-  if (!firstGeometry || !lastGeometry) return "";
+  if (!firstGeometry || !lastGeometry) return [];
 
   const first = coilConnectionEndpoints(coils[0], firstGeometry);
-  const sections = [
-    `M ${startX} ${routeY} H ${first.entryX} V ${firstGeometry.bottomY}`,
-  ];
+  const segments = [{
+    order: 1,
+    kind: "start",
+    laneY: laneYs[0],
+    labelX: startX + 18,
+    d: `M ${startX} ${laneYs[0]} H ${first.entryX} V ${firstGeometry.bottomY}`,
+  }];
 
   for (let index = 0; index < coils.length - 1; index += 1) {
     const currentGeometry = geometryByCoil.get(coils[index].coil);
     const nextGeometry = geometryByCoil.get(coils[index + 1].coil);
-    if (!currentGeometry || !nextGeometry) continue;
+    if (!currentGeometry || !nextGeometry) return [];
 
     const current = coilConnectionEndpoints(coils[index], currentGeometry);
     const next = coilConnectionEndpoints(coils[index + 1], nextGeometry);
-    sections.push(
-      `M ${current.exitX} ${currentGeometry.bottomY} V ${routeY} H ${next.entryX} V ${nextGeometry.bottomY}`,
-    );
+    const laneY = laneYs[index + 1];
+    const direction = next.entryX >= current.exitX ? 1 : -1;
+    segments.push({
+      order: index + 2,
+      kind: "link",
+      laneY,
+      labelX: current.exitX + direction * 18,
+      d: `M ${current.exitX} ${currentGeometry.bottomY} V ${laneY} H ${next.entryX} V ${nextGeometry.bottomY}`,
+    });
   }
 
   const last = coilConnectionEndpoints(
     coils[coils.length - 1],
     lastGeometry,
   );
-  sections.push(
-    `M ${last.exitX} ${lastGeometry.bottomY} V ${routeY} H ${endX}`,
-  );
-  return sections.join(" ");
+  const endLaneY = laneYs[laneYs.length - 1];
+  segments.push({
+    order: coils.length + 1,
+    kind: "end",
+    laneY: endLaneY,
+    labelX: endX - 18,
+    d: `M ${last.exitX} ${lastGeometry.bottomY} V ${endLaneY} H ${endX}`,
+  });
+  return segments;
 }
 
 export function positiveModulo(value, divisor) {

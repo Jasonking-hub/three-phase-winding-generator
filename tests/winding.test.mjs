@@ -5,7 +5,8 @@ import {
   DIAGRAM_COIL_WIDTH,
   DIAGRAM_MAX_SCALE,
   DIAGRAM_MIN_SCALE,
-  buildSeriesRoute,
+  buildPhaseRouteLayouts,
+  buildSeriesRouteSegments,
   buildWindingDiagram,
   buildWindingDiagramModel,
   coilConnectionEndpoints,
@@ -126,27 +127,77 @@ test("reverses coil entry and exit for negative polarity", () => {
   );
 });
 
-test("connects each coil exit to the next polarity-aware entry", () => {
+test("allocates one globally unique horizontal lane per route segment", () => {
+  const layouts = buildPhaseRouteLayouts(
+    [
+      { phase: "A", coils: [{ coil: 1 }, { coil: 2 }] },
+      { phase: "B", coils: [{ coil: 3 }] },
+      { phase: "C", coils: [{ coil: 4 }, { coil: 5 }] },
+    ],
+    100,
+    24,
+    36,
+  );
+
+  assert.deepEqual(layouts.map(({ laneYs }) => laneYs), [
+    [100, 124, 148],
+    [184, 208],
+    [244, 268, 292],
+  ]);
+  assert.equal(
+    new Set(layouts.flatMap(({ laneYs }) => laneYs)).size,
+    layouts.flatMap(({ laneYs }) => laneYs).length,
+  );
+  assert.ok(layouts[1].startY > layouts[0].endY);
+  assert.ok(layouts[2].startY > layouts[1].endY);
+});
+
+test("builds numbered polarity-aware route segments on distinct lanes", () => {
   const geometry = new Map([
     [1, { leftX: 10, rightX: 20, bottomY: 30 }],
     [2, { leftX: 40, rightX: 50, bottomY: 30 }],
   ]);
 
-  const route = buildSeriesRoute(
+  const segments = buildSeriesRouteSegments(
     [
       { coil: 1, polarity: "+" },
       { coil: 2, polarity: "-" },
     ],
     geometry,
-    100,
+    [100, 124, 148],
     0,
     60,
   );
 
-  assert.equal(
-    route,
-    "M 0 100 H 10 V 30 M 20 30 V 100 H 50 V 30 M 40 30 V 100 H 60",
+  assert.deepEqual(
+    segments.map(({ order, kind, laneY, d }) => ({
+      order,
+      kind,
+      laneY,
+      d,
+    })),
+    [
+      {
+        order: 1,
+        kind: "start",
+        laneY: 100,
+        d: "M 0 100 H 10 V 30",
+      },
+      {
+        order: 2,
+        kind: "link",
+        laneY: 124,
+        d: "M 20 30 V 124 H 50 V 30",
+      },
+      {
+        order: 3,
+        kind: "end",
+        laneY: 148,
+        d: "M 40 30 V 148 H 60",
+      },
+    ],
   );
+  assert.equal(new Set(segments.map(({ laneY }) => laneY)).size, 3);
 });
 
 test("changes diagram scale with the wheel and clamps it to the approved range", () => {
