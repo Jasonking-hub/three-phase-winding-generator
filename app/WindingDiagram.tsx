@@ -23,6 +23,7 @@ const PHASE_STROKE = {
 const TOOTH_TOP = 112;
 const TOOTH_HEIGHT = 252;
 const CORE_START = 90;
+const STAR_RIGHT_GUTTER = 120;
 const LABEL_Y = 426;
 const ROUTE_START_Y = 486;
 const ROUTE_GAP = 48;
@@ -74,8 +75,15 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
 
   const naturalWidth = Math.max(
     820,
-    CORE_START * 2 + model.slotCount * DIAGRAM_TOOTH_PITCH,
+    CORE_START * 2 +
+      model.slotCount * DIAGRAM_TOOTH_PITCH +
+      STAR_RIGHT_GUTTER,
   );
+  const starX = naturalWidth - 108;
+  const starTopY = ROUTE_START_Y;
+  const starBottomY =
+    ROUTE_START_Y + (model.groups.length - 1) * ROUTE_GAP;
+  const starY = (starTopY + starBottomY) / 2;
   const scaledWidth = naturalWidth * scale;
   const scaledHeight = DIAGRAM_HEIGHT * scale;
   const sectionClass =
@@ -152,7 +160,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
           aria-labelledby="diagram-title diagram-description"
         >
           <desc id="diagram-description">
-            {`${model.slotCount} 个铁芯齿、${model.coils.length} 个等尺寸线圈及三相串联引线。`}
+            {`${model.slotCount} 个铁芯齿、${model.coils.length} 个等尺寸线圈、极性反向串联及星形公共点。`}
           </desc>
 
           <g className="diagram-core">
@@ -210,7 +218,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                     group.displayPhase as keyof typeof PHASE_STROKE
                   ];
                 const routeY = ROUTE_START_Y + groupIndex * ROUTE_GAP;
-                const [startTerminal, endTerminal] = group.terminal.split(" / ");
+                const [startTerminal] = group.terminal.split(" / ");
                 return (
                   <g key={group.phase} style={{ color: stroke }}>
                     <path
@@ -220,24 +228,42 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                         geometryByCoil,
                         routeY,
                         78,
-                        naturalWidth - 78,
+                        starX,
                       )}
                     />
                     <text className="diagram-phase-label" x="18" y={routeY + 5}>
                       {group.displayPhase} 相 {startTerminal}
                     </text>
-                    <text
-                      className="diagram-terminal"
-                      x={naturalWidth - 18}
-                      y={routeY + 5}
-                      textAnchor="end"
-                    >
-                      {endTerminal}
-                    </text>
                   </g>
                 );
               },
             )}
+            <g className="diagram-star-point">
+              <path
+                className="diagram-star-bus"
+                d={`M ${starX} ${starTopY} V ${starBottomY}`}
+              />
+              <circle
+                className="diagram-star-node"
+                cx={starX}
+                cy={starY}
+                r="5"
+              />
+              <text
+                className="diagram-star-label"
+                x={starX + 14}
+                y={starY - 5}
+              >
+                星点 N
+              </text>
+              <text
+                className="diagram-star-terminals"
+                x={starX + 14}
+                y={starY + 15}
+              >
+                U2 / V2 / W2
+              </text>
+            </g>
           </g>
         </svg>
       </div>

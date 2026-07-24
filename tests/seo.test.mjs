@@ -59,6 +59,12 @@ test("renders the approved iron-core winding diagram with one centered label per
   assert.match(component, /diagram-coil-label/);
   assert.match(component, /coil\.label/);
   assert.match(component, /strokeWidth={DIAGRAM_COIL_STROKE_WIDTH}/);
+  assert.match(component, /buildSeriesRoute/);
+  assert.match(component, /diagram-star-bus/);
+  assert.match(component, /diagram-star-node/);
+  assert.match(component, /星点 N/);
+  assert.match(component, /U2 \/ V2 \/ W2/);
+  assert.doesNotMatch(component, /endTerminal/);
   assert.doesNotMatch(component, /lowerMark/);
   assert.match(component, /addEventListener\("wheel"/);
   assert.match(component, /#bc6200/);
