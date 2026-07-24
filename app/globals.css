@@ -94,6 +94,8 @@ tbody tr:hover { background: #f0f6fd; }
 .diagram-coil { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 10; }
 .diagram-coil-label { fill: currentColor; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 14px; font-weight: 800; text-anchor: middle; }
 .diagram-series-line { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.diagram-route-order-badge circle { fill: #fbfcfe; stroke: currentColor; stroke-width: 1.5; }
+.diagram-route-order { fill: currentColor; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 10px; font-weight: 800; text-anchor: middle; }
 .diagram-phase-label { fill: currentColor; font-size: 14px; font-weight: 800; }
 .diagram-star-bus { fill: none; stroke: #35465c; stroke-width: 2; }
 .diagram-star-node { fill: #35465c; }

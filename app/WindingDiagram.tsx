@@ -5,7 +5,8 @@ import {
   DIAGRAM_COIL_STROKE_WIDTH,
   DIAGRAM_TOOTH_PITCH,
   DIAGRAM_TOOTH_WIDTH,
-  buildSeriesRoute,
+  buildPhaseRouteLayouts,
+  buildSeriesRouteSegments,
   buildWindingDiagramModel,
   diagramScaleFromWheel,
   fixedCoilGeometry,
@@ -26,8 +27,9 @@ const CORE_START = 90;
 const STAR_RIGHT_GUTTER = 120;
 const LABEL_Y = 426;
 const ROUTE_START_Y = 486;
-const ROUTE_GAP = 48;
-const DIAGRAM_HEIGHT = 630;
+const ROUTE_LANE_GAP = 24;
+const PHASE_ROUTE_GAP = 36;
+const ROUTE_BOTTOM_GUTTER = 72;
 
 type WindingRow = {
   coil: number;
@@ -80,12 +82,23 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
       STAR_RIGHT_GUTTER,
   );
   const starX = naturalWidth - 108;
-  const starTopY = ROUTE_START_Y;
+  const phaseRouteLayouts = buildPhaseRouteLayouts(
+    model.groups,
+    ROUTE_START_Y,
+    ROUTE_LANE_GAP,
+    PHASE_ROUTE_GAP,
+  );
+  const starEndYs = phaseRouteLayouts.map(
+    ({ endY }: { endY: number }) => endY,
+  );
+  const starTopY =
+    starEndYs.length > 0 ? Math.min(...starEndYs) : ROUTE_START_Y;
   const starBottomY =
-    ROUTE_START_Y + (model.groups.length - 1) * ROUTE_GAP;
+    starEndYs.length > 0 ? Math.max(...starEndYs) : ROUTE_START_Y;
   const starY = (starTopY + starBottomY) / 2;
+  const diagramHeight = starBottomY + ROUTE_BOTTOM_GUTTER;
   const scaledWidth = naturalWidth * scale;
-  const scaledHeight = DIAGRAM_HEIGHT * scale;
+  const scaledHeight = diagramHeight * scale;
   const sectionClass =
     model.slotCount >= 12 ? "winding-diagram is-wide" : "winding-diagram";
 
@@ -154,7 +167,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
         aria-label="三相接线图，鼠标滚轮缩放"
       >
         <svg
-          viewBox={`0 0 ${naturalWidth} ${DIAGRAM_HEIGHT}`}
+          viewBox={`0 0 ${naturalWidth} ${diagramHeight}`}
           style={{ width: scaledWidth, height: scaledHeight }}
           role="img"
           aria-labelledby="diagram-title diagram-description"
@@ -162,6 +175,31 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
           <desc id="diagram-description">
             {`${model.slotCount} 个铁芯齿、${model.coils.length} 个等尺寸线圈、极性反向串联及星形公共点。`}
           </desc>
+
+          <defs>
+            {model.groups.map(
+              (group: WindingConnection & { coils: DiagramCoil[] }) => {
+                const stroke =
+                  PHASE_STROKE[
+                    group.displayPhase as keyof typeof PHASE_STROKE
+                  ];
+                return (
+                  <marker
+                    key={`arrow-${group.phase}`}
+                    id={`route-arrow-${group.phase}`}
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="7"
+                    refY="4"
+                    orient="auto"
+                    markerUnits="userSpaceOnUse"
+                  >
+                    <path d="M 0 0 L 8 4 L 0 8 Z" fill={stroke} />
+                  </marker>
+                );
+              },
+            )}
+          </defs>
 
           <g className="diagram-core">
             {Array.from({ length: model.toothCount }, (_, index) => (
@@ -217,21 +255,47 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                   PHASE_STROKE[
                     group.displayPhase as keyof typeof PHASE_STROKE
                   ];
-                const routeY = ROUTE_START_Y + groupIndex * ROUTE_GAP;
+                const layout = phaseRouteLayouts[groupIndex];
+                const segments = buildSeriesRouteSegments(
+                  group.coils,
+                  geometryByCoil,
+                  layout.laneYs,
+                  78,
+                  starX,
+                );
                 const [startTerminal] = group.terminal.split(" / ");
                 return (
                   <g key={group.phase} style={{ color: stroke }}>
-                    <path
-                      className="diagram-series-line"
-                      d={buildSeriesRoute(
-                        group.coils,
-                        geometryByCoil,
-                        routeY,
-                        78,
-                        starX,
-                      )}
-                    />
-                    <text className="diagram-phase-label" x="18" y={routeY + 5}>
+                    {segments.map(
+                      (segment: {
+                        order: number;
+                        laneY: number;
+                        labelX: number;
+                        d: string;
+                      }) => (
+                        <g key={`${group.phase}-${segment.order}`}>
+                          <path
+                            className="diagram-series-line"
+                            d={segment.d}
+                            markerEnd={`url(#route-arrow-${group.phase})`}
+                          />
+                          <g
+                            className="diagram-route-order-badge"
+                            transform={`translate(${segment.labelX} ${segment.laneY - 9})`}
+                          >
+                            <circle r="9" />
+                            <text className="diagram-route-order" y="4">
+                              {segment.order}
+                            </text>
+                          </g>
+                        </g>
+                      ),
+                    )}
+                    <text
+                      className="diagram-phase-label"
+                      x="18"
+                      y={layout.startY + 5}
+                    >
                       {group.displayPhase} 相 {startTerminal}
                     </text>
                   </g>

@@ -59,7 +59,16 @@ test("renders the approved iron-core winding diagram with one centered label per
   assert.match(component, /diagram-coil-label/);
   assert.match(component, /coil\.label/);
   assert.match(component, /strokeWidth={DIAGRAM_COIL_STROKE_WIDTH}/);
-  assert.match(component, /buildSeriesRoute/);
+  assert.match(component, /buildPhaseRouteLayouts/);
+  assert.match(component, /buildSeriesRouteSegments/);
+  assert.match(component, /<marker/);
+  assert.match(component, /markerEnd=/);
+  assert.match(component, /diagram-route-order/);
+  assert.match(component, /diagramHeight/);
+  assert.doesNotMatch(component, /buildSeriesRoute\(/);
+  assert.doesNotMatch(component, /const DIAGRAM_HEIGHT/);
+  assert.match(css, /\.diagram-route-order-badge/);
+  assert.match(css, /\.diagram-route-order/);
   assert.match(component, /diagram-star-bus/);
   assert.match(component, /diagram-star-node/);
   assert.match(component, /星点 N/);
