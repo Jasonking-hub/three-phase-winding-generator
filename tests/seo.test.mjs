@@ -46,13 +46,19 @@ test("ships Google Search Console verification file at site root", async () => {
 
 test("renders the approved iron-core winding diagram with one centered label per coil", async () => {
   const component = await readFile(new URL("../app/WindingDiagram.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(component, /buildWindingDiagramModel/);
+  assert.match(component, /fixedCoilGeometry/);
   assert.match(component, /三相接线图/);
   assert.match(component, /<svg/);
   assert.match(component, /diagram-core-tooth/);
-  assert.match(component, /diagram-edge-tooth/);
+  assert.doesNotMatch(component, /diagram-edge-tooth/);
+  assert.doesNotMatch(component, /coilSpan/);
+  assert.doesNotMatch(component, /phaseOffset/);
+  assert.doesNotMatch(css, /\.diagram-edge-tooth/);
   assert.match(component, /diagram-coil-label/);
   assert.match(component, /coil\.label/);
+  assert.match(component, /strokeWidth={DIAGRAM_COIL_STROKE_WIDTH}/);
   assert.doesNotMatch(component, /lowerMark/);
   assert.match(component, /addEventListener\("wheel"/);
   assert.match(component, /#bc6200/);

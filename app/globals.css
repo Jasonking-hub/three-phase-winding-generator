@@ -90,8 +90,7 @@ tbody tr:hover { background: #f0f6fd; }
 .diagram-scroll { height: 650px; overflow: auto; overscroll-behavior: contain; background: #fbfcfe; outline: none; }
 .diagram-scroll:focus { box-shadow: inset 0 0 0 3px #dcecfb; }
 .diagram-scroll svg { display: block; max-width: none; transform-origin: 0 0; }
-.diagram-core-tooth, .diagram-edge-tooth { fill: #dce2e8; stroke: #59697b; stroke-width: 1.5; }
-.diagram-edge-tooth { fill: #cfd7df; }
+.diagram-core-tooth { fill: #dce2e8; stroke: #59697b; stroke-width: 1.5; }
 .diagram-coil { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 10; }
 .diagram-coil-label { fill: currentColor; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 14px; font-weight: 800; text-anchor: middle; }
 .diagram-series-line { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }

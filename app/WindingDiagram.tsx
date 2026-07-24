@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  DIAGRAM_COIL_STROKE_WIDTH,
+  DIAGRAM_TOOTH_PITCH,
+  DIAGRAM_TOOTH_WIDTH,
   buildWindingDiagramModel,
   diagramScaleFromWheel,
-  positiveModulo,
+  fixedCoilGeometry,
 } from "./winding.js";
 
 const PHASE_STROKE = {
@@ -16,11 +19,9 @@ const PHASE_STROKE = {
   W: "#007a70",
 };
 
-const TOOTH_PITCH = 80;
-const TOOTH_WIDTH = 46;
 const TOOTH_TOP = 112;
 const TOOTH_HEIGHT = 252;
-const COIL_BOTTOM = 386;
+const CORE_START = 90;
 const LABEL_Y = 426;
 const ROUTE_START_Y = 486;
 const ROUTE_GAP = 48;
@@ -61,30 +62,6 @@ type CoilGeometry = {
   bottomY: number;
 };
 
-function coilSpan(row: WindingRow, slotCount: number) {
-  return Math.max(1, positiveModulo(row.lowerSlot - row.upperSlot, slotCount));
-}
-
-function coilGeometry(
-  row: WindingRow,
-  index: number,
-  slotCount: number,
-  coreStart: number,
-): CoilGeometry {
-  const span = coilSpan(row, slotCount);
-  const centerX = coreStart + index * TOOTH_PITCH + TOOTH_WIDTH / 2;
-  const halfWidth = (TOOTH_WIDTH + 28 + (span - 1) * TOOTH_PITCH) / 2;
-  const phaseOffset = ({ A: 0, B: 1, C: 2 }[row.phase] ?? 0) * 11;
-
-  return {
-    centerX,
-    leftX: centerX - halfWidth,
-    rightX: centerX + halfWidth,
-    topY: 66 + phaseOffset,
-    bottomY: COIL_BOTTOM,
-  };
-}
-
 function serialRoute(
   coils: WindingRow[],
   geometryByCoil: Map<number, CoilGeometry>,
@@ -123,16 +100,9 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
     [winding.connections, winding.rows],
   );
 
-  const maxSpan = model.coils.reduce(
-    (largest: number, coil: DiagramCoil) =>
-      Math.max(largest, coilSpan(coil, Math.max(1, model.slotCount))),
-    1,
-  );
-  const sideMargin = 92 + Math.max(0, maxSpan - 1) * TOOTH_PITCH / 2;
-  const coreStart = sideMargin;
   const naturalWidth = Math.max(
     820,
-    sideMargin * 2 + model.slotCount * TOOTH_PITCH,
+    CORE_START * 2 + model.slotCount * DIAGRAM_TOOTH_PITCH,
   );
   const scaledWidth = naturalWidth * scale;
   const scaledHeight = DIAGRAM_HEIGHT * scale;
@@ -144,10 +114,10 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
       new Map<number, CoilGeometry>(
         model.coils.map((coil: DiagramCoil, index: number) => [
           coil.coil,
-          coilGeometry(coil, index, model.slotCount, coreStart),
+          fixedCoilGeometry(index, CORE_START),
         ]),
       ),
-    [coreStart, model.coils, model.slotCount],
+    [model.coils],
   );
 
   useEffect(() => {
@@ -210,34 +180,20 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
           aria-labelledby="diagram-title diagram-description"
         >
           <desc id="diagram-description">
-            {`${model.slotCount} 个铁芯齿、两个边齿、${model.coils.length} 个线圈及三相串联引线。`}
+            {`${model.slotCount} 个铁芯齿、${model.coils.length} 个等尺寸线圈及三相串联引线。`}
           </desc>
 
           <g className="diagram-core">
-            <rect
-              className="diagram-edge-tooth"
-              x={coreStart - 52}
-              y={TOOTH_TOP}
-              width="30"
-              height={TOOTH_HEIGHT}
-            />
             {Array.from({ length: model.toothCount }, (_, index) => (
               <rect
                 key={`tooth-${index + 1}`}
                 className="diagram-core-tooth"
-                x={coreStart + index * TOOTH_PITCH}
+                x={CORE_START + index * DIAGRAM_TOOTH_PITCH}
                 y={TOOTH_TOP}
-                width={TOOTH_WIDTH}
+                width={DIAGRAM_TOOTH_WIDTH}
                 height={TOOTH_HEIGHT}
               />
             ))}
-            <rect
-              className="diagram-edge-tooth"
-              x={coreStart + model.toothCount * TOOTH_PITCH + 22}
-              y={TOOTH_TOP}
-              width="30"
-              height={TOOTH_HEIGHT}
-            />
           </g>
 
           <g className="diagram-coils">
@@ -257,6 +213,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                     width={geometry.rightX - geometry.leftX}
                     height={geometry.bottomY - geometry.topY}
                     rx="20"
+                    strokeWidth={DIAGRAM_COIL_STROKE_WIDTH}
                   />
                   <text
                     className="diagram-coil-label"
