@@ -34,6 +34,24 @@ function terminalFor(phase) {
   return { A: "U1 / U2", B: "V1 / V2", C: "W1 / W2" }[phase];
 }
 
+export function buildWindingDiagram(rows, connections) {
+  return connections.map(({ phase, displayPhase, terminal }) => ({
+    phase,
+    displayPhase,
+    terminal,
+    coils: rows
+      .filter((row) => row.phase === phase)
+      .map(({ coil, upperSlot, lowerSlot, upperMark, lowerMark, polarity }) => ({
+        coil,
+        upperSlot,
+        lowerSlot,
+        upperMark,
+        lowerMark,
+        polarity,
+      })),
+  }));
+}
+
 export function generateWinding({ slots, poles, notation = "ABC", swapBC = false }) {
   const recommendedPitch = Math.max(1, Math.floor(slots / poles));
   const valid = isValidWinding(slots, poles);

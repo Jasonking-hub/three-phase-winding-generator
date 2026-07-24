@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { generateWinding, isValidWinding } from "../app/winding.js";
+import { buildWindingDiagram, generateWinding, isValidWinding } from "../app/winding.js";
 
 test("matches workbook's Q=12, P=10 sample rows", () => {
   const result = generateWinding({ slots: 12, poles: 10, notation: "ABC", swapBC: false });
@@ -44,4 +44,29 @@ test("uses workbook validation limits", () => {
   assert.equal(isValidWinding(11, 10), false);
   assert.equal(isValidWinding(12, 9), false);
   assert.equal(generateWinding({ slots: 12, poles: 9 }).rows.length, 0);
+});
+
+test("groups winding rows for ABC, UVW, and swapped phase diagrams", () => {
+  const abc = generateWinding({ slots: 12, poles: 10, notation: "ABC" });
+  const abcDiagram = buildWindingDiagram(abc.rows, abc.connections);
+  assert.deepEqual(abcDiagram.map(({ displayPhase }) => displayPhase), ["A", "B", "C"]);
+  assert.deepEqual(abcDiagram[0].coils[0], {
+    coil: 1,
+    upperSlot: 1,
+    lowerSlot: 2,
+    upperMark: "A+",
+    lowerMark: "A-",
+    polarity: "+",
+  });
+
+  const uvw = generateWinding({ slots: 12, poles: 10, notation: "UVW" });
+  assert.deepEqual(
+    buildWindingDiagram(uvw.rows, uvw.connections).map(({ displayPhase }) => displayPhase),
+    ["U", "V", "W"],
+  );
+
+  const swapped = generateWinding({ slots: 12, poles: 10, notation: "ABC", swapBC: true });
+  const swappedDiagram = buildWindingDiagram(swapped.rows, swapped.connections);
+  assert.deepEqual(swappedDiagram.map(({ displayPhase }) => displayPhase), ["A", "C", "B"]);
+  assert.equal(swappedDiagram[2].coils[0].upperMark, "B+");
 });
