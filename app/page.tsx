@@ -152,7 +152,7 @@ export default function Home() {
             <div className="empty-state">输入有效的 Q 和 P 后显示完整接线表。</div>
           )}
         </section>
-        <WindingDiagram winding={winding} resetKey={`${slots}:${poles}`} />
+        <WindingDiagram key={`${slots}:${poles}`} winding={winding} />
       </section>
 
       <section className="connection-section" aria-labelledby="connection-title">

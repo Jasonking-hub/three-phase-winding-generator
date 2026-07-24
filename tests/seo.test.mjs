@@ -44,13 +44,17 @@ test("ships Google Search Console verification file at site root", async () => {
   assert.equal(file.trim(), "google-site-verification: google187d414d3b86a0f3.html");
 });
 
-test("renders a three-phase coil-only connection diagram", async () => {
+test("renders the approved iron-core winding diagram with one centered label per coil", async () => {
   const component = await readFile(new URL("../app/WindingDiagram.tsx", import.meta.url), "utf8");
-  assert.match(component, /buildWindingDiagram/);
+  assert.match(component, /buildWindingDiagramModel/);
   assert.match(component, /三相接线图/);
   assert.match(component, /<svg/);
-  assert.match(component, /upperMark/);
-  assert.match(component, /lowerMark/);
+  assert.match(component, /diagram-core-tooth/);
+  assert.match(component, /diagram-edge-tooth/);
+  assert.match(component, /diagram-coil-label/);
+  assert.match(component, /coil\.label/);
+  assert.doesNotMatch(component, /lowerMark/);
+  assert.match(component, /addEventListener\("wheel"/);
   assert.match(component, /#bc6200/);
   assert.match(component, /#245ba9/);
   assert.match(component, /#007a70/);
@@ -68,16 +72,21 @@ test("renders the approved compact title and six-column winding table", async ()
   assert.doesNotMatch(page, /<th>上层标记<\/th>/);
   assert.doesNotMatch(page, /<th>下层标记<\/th>/);
   assert.match(page, /<td>{row\.upperMark}<\/td>/);
-  assert.match(page, /resetKey={`\$\{slots\}:\$\{poles\}`}/);
+  assert.match(page, /key={`\$\{slots\}:\$\{poles\}`}/);
+  assert.doesNotMatch(page, /resetKey=/);
   assert.match(css, /\.winding-diagram/);
   assert.match(css, /--a: #bc6200/);
   assert.match(css, /--b: #245ba9/);
   assert.match(css, /--c: #007a70/);
 });
 
-test("preserves full diagram width for high slot counts", async () => {
+test("expands twelve-slot diagrams across the workspace and keeps scalable overflow", async () => {
   const component = await readFile(new URL("../app/WindingDiagram.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
-  assert.match(component, /style={{ width }}/);
-  assert.doesNotMatch(css, /\.diagram-scroll svg \{[^}]*width: 100%/);
+  assert.match(component, /model\.slotCount >= 12/);
+  assert.match(component, /winding-diagram is-wide/);
+  assert.match(component, /style={{ width: scaledWidth, height: scaledHeight }}/);
+  assert.match(css, /\.winding-diagram\.is-wide/);
+  assert.match(css, /grid-column: 1 \/ -1/);
+  assert.match(css, /overflow: auto/);
 });

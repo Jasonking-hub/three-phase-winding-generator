@@ -81,21 +81,22 @@ tbody tr:hover { background: #f0f6fd; }
 .ok-label { background: #e8f6ef; color: #16663f; padding: 3px 7px; font-size: inherit; }
 .empty-state { display: grid; place-items: center; min-height: 260px; border: 1px dashed #b7c4d4; border-radius: 8px; color: var(--muted); }
 
-.winding-diagram { margin-top: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
-.diagram-heading { padding: 18px 20px 0; }
+.winding-diagram { grid-column: 2; min-width: 0; margin: 0 28px 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+.winding-diagram.is-wide { grid-column: 1 / -1; }
+.diagram-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
 .diagram-heading h3 { margin: 0 0 5px; font-size: 17px; }
 .diagram-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
-.diagram-scroll { overflow-x: auto; padding: 16px 0 8px; }
-.diagram-scroll svg { display: block; min-width: 820px; height: auto; }
-.diagram-baseline { stroke: #506073; stroke-width: 1.5; }
-.diagram-slot line { stroke: #aebdce; stroke-width: 1; }
-.diagram-slot text { fill: #536175; font-size: 12px; text-anchor: middle; }
+.diagram-zoom-value { min-width: 52px; border: 1px solid #c6d1de; border-radius: 6px; padding: 5px 8px; color: #35465c; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 12px; font-weight: 800; text-align: center; }
+.diagram-scroll { height: 650px; overflow: auto; overscroll-behavior: contain; background: #fbfcfe; outline: none; }
+.diagram-scroll:focus { box-shadow: inset 0 0 0 3px #dcecfb; }
+.diagram-scroll svg { display: block; max-width: none; transform-origin: 0 0; }
+.diagram-core-tooth, .diagram-edge-tooth { fill: #dce2e8; stroke: #59697b; stroke-width: 1.5; }
+.diagram-edge-tooth { fill: #cfd7df; }
+.diagram-coil { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 10; }
+.diagram-coil-label { fill: currentColor; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 14px; font-weight: 800; text-anchor: middle; }
+.diagram-series-line { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .diagram-phase-label, .diagram-terminal { fill: currentColor; font-size: 14px; font-weight: 800; }
-.diagram-bus { fill: none; stroke: currentColor; stroke-width: 2; }
-.diagram-lead { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .48; }
-.diagram-coil { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 4; }
-.diagram-mark { fill: currentColor; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 12px; font-weight: 800; text-anchor: middle; }
-.diagram-empty { display: grid; place-items: center; min-height: 220px; margin-top: 24px; border: 1px dashed #b7c4d4; border-radius: 10px; color: var(--muted); }
+.diagram-empty { grid-column: 2; display: grid; place-items: center; min-height: 220px; margin: 0 28px 28px; border: 1px dashed #b7c4d4; border-radius: 10px; color: var(--muted); }
 
 .connection-section { margin-top: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 28px; }
 .connection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
@@ -126,7 +127,9 @@ tbody tr:hover { background: #f0f6fd; }
   .control-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .connection-grid { grid-template-columns: 1fr; }
   .seo-copy-grid { grid-template-columns: 1fr; }
-  .diagram-heading { padding: 16px 16px 0; }
+  .diagram-heading { padding: 16px; }
+  .winding-diagram, .winding-diagram.is-wide, .diagram-empty { grid-column: 1; margin: 0 20px 20px; }
+  .diagram-scroll { height: 560px; }
 }
 
 @media (max-width: 520px) {
