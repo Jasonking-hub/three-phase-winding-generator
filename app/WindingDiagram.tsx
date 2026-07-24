@@ -30,6 +30,7 @@ const ROUTE_START_Y = 486;
 const ROUTE_LANE_GAP = 24;
 const PHASE_ROUTE_GAP = 36;
 const ROUTE_BOTTOM_GUTTER = 72;
+const DIAGRAM_VIEWPORT_MAX_HEIGHT = 980;
 
 type WindingRow = {
   coil: number;
@@ -97,6 +98,10 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
     starEndYs.length > 0 ? Math.max(...starEndYs) : ROUTE_START_Y;
   const starY = (starTopY + starBottomY) / 2;
   const diagramHeight = starBottomY + ROUTE_BOTTOM_GUTTER;
+  const viewportHeight = Math.min(
+    diagramHeight,
+    DIAGRAM_VIEWPORT_MAX_HEIGHT,
+  );
   const scaledWidth = naturalWidth * scale;
   const scaledHeight = diagramHeight * scale;
   const sectionClass =
@@ -163,6 +168,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
       <div
         ref={viewportRef}
         className="diagram-scroll"
+        style={{ height: viewportHeight }}
         tabIndex={0}
         aria-label="三相接线图，鼠标滚轮缩放"
       >

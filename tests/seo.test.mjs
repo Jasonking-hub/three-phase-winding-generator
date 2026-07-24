@@ -65,6 +65,9 @@ test("renders the approved iron-core winding diagram with one centered label per
   assert.match(component, /markerEnd=/);
   assert.match(component, /diagram-route-order/);
   assert.match(component, /diagramHeight/);
+  assert.match(component, /DIAGRAM_VIEWPORT_MAX_HEIGHT/);
+  assert.match(component, /const viewportHeight = Math\.min/);
+  assert.match(component, /style={{ height: viewportHeight }}/);
   assert.doesNotMatch(component, /buildSeriesRoute\(/);
   assert.doesNotMatch(component, /const DIAGRAM_HEIGHT/);
   assert.match(css, /\.diagram-route-order-badge/);
