@@ -1,7 +1,21 @@
 const PHASES = ["A", "B", "C"];
 
+export const DIAGRAM_MIN_SCALE = 0.6;
+export const DIAGRAM_MAX_SCALE = 2.2;
+
 export function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
+}
+
+export function diagramScaleFromWheel(currentScale, deltaY) {
+  const factor = deltaY < 0 ? 1.1 : 0.9;
+  return Math.min(
+    DIAGRAM_MAX_SCALE,
+    Math.max(
+      DIAGRAM_MIN_SCALE,
+      Math.round(currentScale * factor * 1000) / 1000,
+    ),
+  );
 }
 
 export function isValidWinding(slots, poles) {
@@ -50,6 +64,24 @@ export function buildWindingDiagram(rows, connections) {
         polarity,
       })),
   }));
+}
+
+export function buildWindingDiagramModel(rows, connections) {
+  const coils = rows.map((row) => ({
+    ...row,
+    label: row.upperMark,
+  }));
+
+  return {
+    slotCount: rows.length,
+    toothCount: rows.length,
+    edgeToothCount: 2,
+    coils,
+    groups: connections.map((connection) => ({
+      ...connection,
+      coils: coils.filter((coil) => coil.phase === connection.phase),
+    })),
+  };
 }
 
 export function generateWinding({ slots, poles, notation = "ABC", swapBC = false }) {

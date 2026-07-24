@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildWindingDiagram, generateWinding, isValidWinding } from "../app/winding.js";
+import {
+  DIAGRAM_MAX_SCALE,
+  DIAGRAM_MIN_SCALE,
+  buildWindingDiagram,
+  buildWindingDiagramModel,
+  diagramScaleFromWheel,
+  generateWinding,
+  isValidWinding,
+} from "../app/winding.js";
 
 test("matches workbook's Q=12, P=10 sample rows", () => {
   const result = generateWinding({ slots: 12, poles: 10, notation: "ABC", swapBC: false });
@@ -69,4 +77,28 @@ test("groups winding rows for ABC, UVW, and swapped phase diagrams", () => {
   const swappedDiagram = buildWindingDiagram(swapped.rows, swapped.connections);
   assert.deepEqual(swappedDiagram.map(({ displayPhase }) => displayPhase), ["A", "C", "B"]);
   assert.equal(swappedDiagram[2].coils[0].upperMark, "B+");
+});
+
+test("builds one tooth, coil, and centered label per slot plus two edge teeth", () => {
+  const winding = generateWinding({ slots: 6, poles: 10, notation: "ABC" });
+  const model = buildWindingDiagramModel(winding.rows, winding.connections);
+
+  assert.equal(model.slotCount, 6);
+  assert.equal(model.toothCount, 6);
+  assert.equal(model.edgeToothCount, 2);
+  assert.equal(model.coils.length, 6);
+  assert.deepEqual(
+    model.coils.map(({ coil, label }) => ({ coil, label })),
+    winding.rows.map(({ coil, upperMark }) => ({ coil, label: upperMark })),
+  );
+  assert.deepEqual(model.groups.map(({ displayPhase }) => displayPhase), ["A", "B", "C"]);
+});
+
+test("changes diagram scale with the wheel and clamps it to the approved range", () => {
+  assert.ok(diagramScaleFromWheel(1, -100) > 1);
+  assert.ok(diagramScaleFromWheel(1, 100) < 1);
+  assert.equal(diagramScaleFromWheel(DIAGRAM_MAX_SCALE, -100), DIAGRAM_MAX_SCALE);
+  assert.equal(diagramScaleFromWheel(DIAGRAM_MIN_SCALE, 100), DIAGRAM_MIN_SCALE);
+  assert.equal(DIAGRAM_MIN_SCALE, 0.6);
+  assert.equal(DIAGRAM_MAX_SCALE, 2.2);
 });
