@@ -43,3 +43,15 @@ test("ships Google Search Console verification file at site root", async () => {
   );
   assert.equal(file.trim(), "google-site-verification: google187d414d3b86a0f3.html");
 });
+
+test("renders a three-phase coil-only connection diagram", async () => {
+  const component = await readFile(new URL("../app/WindingDiagram.tsx", import.meta.url), "utf8");
+  assert.match(component, /buildWindingDiagram/);
+  assert.match(component, /三相接线图/);
+  assert.match(component, /<svg/);
+  assert.match(component, /upperMark/);
+  assert.match(component, /lowerMark/);
+  assert.match(component, /#bc6200/);
+  assert.match(component, /#245ba9/);
+  assert.match(component, /#007a70/);
+});
