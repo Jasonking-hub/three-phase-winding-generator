@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  DIAGRAM_COIL_STROKE_WIDTH,
+  DIAGRAM_COIL_WIDTH,
   DIAGRAM_MAX_SCALE,
   DIAGRAM_MIN_SCALE,
   buildWindingDiagram,
   buildWindingDiagramModel,
   diagramScaleFromWheel,
+  fixedCoilGeometry,
   generateWinding,
   isValidWinding,
 } from "../app/winding.js";
@@ -79,19 +82,33 @@ test("groups winding rows for ABC, UVW, and swapped phase diagrams", () => {
   assert.equal(swappedDiagram[2].coils[0].upperMark, "B+");
 });
 
-test("builds one tooth, coil, and centered label per slot plus two edge teeth", () => {
+test("builds one tooth, coil, and centered label per slot without edge teeth", () => {
   const winding = generateWinding({ slots: 6, poles: 10, notation: "ABC" });
   const model = buildWindingDiagramModel(winding.rows, winding.connections);
 
   assert.equal(model.slotCount, 6);
   assert.equal(model.toothCount, 6);
-  assert.equal(model.edgeToothCount, 2);
+  assert.equal(Object.hasOwn(model, "edgeToothCount"), false);
   assert.equal(model.coils.length, 6);
   assert.deepEqual(
     model.coils.map(({ coil, label }) => ({ coil, label })),
     winding.rows.map(({ coil, upperMark }) => ({ coil, label: upperMark })),
   );
   assert.deepEqual(model.groups.map(({ displayPhase }) => displayPhase), ["A", "B", "C"]);
+});
+
+test("uses equal coil geometry with a visible gap between adjacent outlines", () => {
+  const first = fixedCoilGeometry(0, 90);
+  const second = fixedCoilGeometry(1, 90);
+
+  assert.equal(first.rightX - first.leftX, DIAGRAM_COIL_WIDTH);
+  assert.equal(second.rightX - second.leftX, DIAGRAM_COIL_WIDTH);
+  assert.equal(first.topY, second.topY);
+  assert.equal(first.bottomY, second.bottomY);
+  assert.equal(
+    second.leftX - first.rightX - DIAGRAM_COIL_STROKE_WIDTH,
+    6,
+  );
 });
 
 test("changes diagram scale with the wheel and clamps it to the approved range", () => {

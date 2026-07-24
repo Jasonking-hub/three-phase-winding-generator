@@ -2,6 +2,25 @@ const PHASES = ["A", "B", "C"];
 
 export const DIAGRAM_MIN_SCALE = 0.6;
 export const DIAGRAM_MAX_SCALE = 2.2;
+export const DIAGRAM_TOOTH_PITCH = 80;
+export const DIAGRAM_TOOTH_WIDTH = 46;
+export const DIAGRAM_COIL_WIDTH = 64;
+export const DIAGRAM_COIL_STROKE_WIDTH = 10;
+export const DIAGRAM_COIL_TOP = 66;
+export const DIAGRAM_COIL_BOTTOM = 386;
+
+export function fixedCoilGeometry(slotIndex, coreStart) {
+  const centerX =
+    coreStart + slotIndex * DIAGRAM_TOOTH_PITCH + DIAGRAM_TOOTH_WIDTH / 2;
+
+  return {
+    centerX,
+    leftX: centerX - DIAGRAM_COIL_WIDTH / 2,
+    rightX: centerX + DIAGRAM_COIL_WIDTH / 2,
+    topY: DIAGRAM_COIL_TOP,
+    bottomY: DIAGRAM_COIL_BOTTOM,
+  };
+}
 
 export function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
@@ -75,7 +94,6 @@ export function buildWindingDiagramModel(rows, connections) {
   return {
     slotCount: rows.length,
     toothCount: rows.length,
-    edgeToothCount: 2,
     coils,
     groups: connections.map((connection) => ({
       ...connection,
