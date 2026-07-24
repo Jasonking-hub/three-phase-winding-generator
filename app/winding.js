@@ -22,6 +22,52 @@ export function fixedCoilGeometry(slotIndex, coreStart) {
   };
 }
 
+export function coilConnectionEndpoints(coil, geometry) {
+  return coil.polarity === "-"
+    ? { entryX: geometry.rightX, exitX: geometry.leftX }
+    : { entryX: geometry.leftX, exitX: geometry.rightX };
+}
+
+export function buildSeriesRoute(
+  coils,
+  geometryByCoil,
+  routeY,
+  startX,
+  endX,
+) {
+  if (coils.length === 0) return "";
+
+  const firstGeometry = geometryByCoil.get(coils[0].coil);
+  const lastGeometry = geometryByCoil.get(coils[coils.length - 1].coil);
+  if (!firstGeometry || !lastGeometry) return "";
+
+  const first = coilConnectionEndpoints(coils[0], firstGeometry);
+  const sections = [
+    `M ${startX} ${routeY} H ${first.entryX} V ${firstGeometry.bottomY}`,
+  ];
+
+  for (let index = 0; index < coils.length - 1; index += 1) {
+    const currentGeometry = geometryByCoil.get(coils[index].coil);
+    const nextGeometry = geometryByCoil.get(coils[index + 1].coil);
+    if (!currentGeometry || !nextGeometry) continue;
+
+    const current = coilConnectionEndpoints(coils[index], currentGeometry);
+    const next = coilConnectionEndpoints(coils[index + 1], nextGeometry);
+    sections.push(
+      `M ${current.exitX} ${currentGeometry.bottomY} V ${routeY} H ${next.entryX} V ${nextGeometry.bottomY}`,
+    );
+  }
+
+  const last = coilConnectionEndpoints(
+    coils[coils.length - 1],
+    lastGeometry,
+  );
+  sections.push(
+    `M ${last.exitX} ${lastGeometry.bottomY} V ${routeY} H ${endX}`,
+  );
+  return sections.join(" ");
+}
+
 export function positiveModulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
 }

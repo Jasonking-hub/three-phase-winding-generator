@@ -5,6 +5,7 @@ import {
   DIAGRAM_COIL_STROKE_WIDTH,
   DIAGRAM_TOOTH_PITCH,
   DIAGRAM_TOOTH_WIDTH,
+  buildSeriesRoute,
   buildWindingDiagramModel,
   diagramScaleFromWheel,
   fixedCoilGeometry,
@@ -61,35 +62,6 @@ type CoilGeometry = {
   topY: number;
   bottomY: number;
 };
-
-function serialRoute(
-  coils: WindingRow[],
-  geometryByCoil: Map<number, CoilGeometry>,
-  routeY: number,
-  width: number,
-) {
-  if (coils.length === 0) return "";
-
-  const first = geometryByCoil.get(coils[0].coil);
-  const last = geometryByCoil.get(coils[coils.length - 1].coil);
-  if (!first || !last) return "";
-
-  const sections = [`M 78 ${routeY} H ${first.leftX} V ${first.bottomY}`];
-
-  for (let index = 0; index < coils.length - 1; index += 1) {
-    const current = geometryByCoil.get(coils[index].coil);
-    const next = geometryByCoil.get(coils[index + 1].coil);
-    if (!current || !next) continue;
-    sections.push(
-      `M ${current.rightX} ${current.bottomY} V ${routeY} H ${next.leftX} V ${next.bottomY}`,
-    );
-  }
-
-  sections.push(
-    `M ${last.rightX} ${last.bottomY} V ${routeY} H ${width - 78}`,
-  );
-  return sections.join(" ");
-}
 
 export default function WindingDiagram({ winding }: { winding: WindingResult }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -243,11 +215,12 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                   <g key={group.phase} style={{ color: stroke }}>
                     <path
                       className="diagram-series-line"
-                      d={serialRoute(
+                      d={buildSeriesRoute(
                         group.coils,
                         geometryByCoil,
                         routeY,
-                        naturalWidth,
+                        78,
+                        naturalWidth - 78,
                       )}
                     />
                     <text className="diagram-phase-label" x="18" y={routeY + 5}>

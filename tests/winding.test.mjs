@@ -5,8 +5,10 @@ import {
   DIAGRAM_COIL_WIDTH,
   DIAGRAM_MAX_SCALE,
   DIAGRAM_MIN_SCALE,
+  buildSeriesRoute,
   buildWindingDiagram,
   buildWindingDiagramModel,
+  coilConnectionEndpoints,
   diagramScaleFromWheel,
   fixedCoilGeometry,
   generateWinding,
@@ -108,6 +110,42 @@ test("uses equal coil geometry with a visible gap between adjacent outlines", ()
   assert.equal(
     second.leftX - first.rightX - DIAGRAM_COIL_STROKE_WIDTH,
     6,
+  );
+});
+
+test("reverses coil entry and exit for negative polarity", () => {
+  const geometry = { leftX: 10, rightX: 20, bottomY: 30 };
+
+  assert.deepEqual(
+    coilConnectionEndpoints({ polarity: "+" }, geometry),
+    { entryX: 10, exitX: 20 },
+  );
+  assert.deepEqual(
+    coilConnectionEndpoints({ polarity: "-" }, geometry),
+    { entryX: 20, exitX: 10 },
+  );
+});
+
+test("connects each coil exit to the next polarity-aware entry", () => {
+  const geometry = new Map([
+    [1, { leftX: 10, rightX: 20, bottomY: 30 }],
+    [2, { leftX: 40, rightX: 50, bottomY: 30 }],
+  ]);
+
+  const route = buildSeriesRoute(
+    [
+      { coil: 1, polarity: "+" },
+      { coil: 2, polarity: "-" },
+    ],
+    geometry,
+    100,
+    0,
+    60,
+  );
+
+  assert.equal(
+    route,
+    "M 0 100 H 10 V 30 M 20 30 V 100 H 50 V 30 M 40 30 V 100 H 60",
   );
 });
 
