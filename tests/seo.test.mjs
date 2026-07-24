@@ -35,3 +35,11 @@ test("ships a slot pole social preview image", async () => {
   await access(new URL("../public/og.png", import.meta.url));
   assert.deepEqual(seoMetadata.openGraph.images, ["/og.png"]);
 });
+
+test("ships Google Search Console verification file at site root", async () => {
+  const file = await readFile(
+    new URL("../public/google187d414d3b86a0f3.html", import.meta.url),
+    "utf8",
+  );
+  assert.equal(file.trim(), "google-site-verification: google187d414d3b86a0f3.html");
+});
