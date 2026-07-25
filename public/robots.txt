@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://three-phase-winding-generator.netlify.app/sitemap.xml

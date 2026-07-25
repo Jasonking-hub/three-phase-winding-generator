@@ -324,7 +324,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                 x={starX + 14}
                 y={starY - 5}
               >
-                星点 N
+                中性点 N
               </text>
               <text
                 className="diagram-star-terminals"

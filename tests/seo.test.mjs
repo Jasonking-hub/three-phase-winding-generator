@@ -6,13 +6,26 @@ import robots from "../app/robots.js";
 import sitemap from "../app/sitemap.js";
 
 test("defines canonical Chinese metadata for slot pole matching", () => {
-  assert.equal(SITE_URL, "https://three-phase-winding-generator.jasonking15871921724.chatgpt.site");
+  assert.equal(SITE_URL, "https://three-phase-winding-generator.netlify.app");
   assert.equal(seoMetadata.title, "槽极配生成器 | 槽极配合计算 | 三相双层绕组");
   assert.match(seoMetadata.description, /槽极配/);
+  assert.match(seoMetadata.description, /槽极怎么算/);
+  assert.ok(seoMetadata.keywords.includes("槽极配"));
+  assert.ok(seoMetadata.keywords.includes("槽极配合计算"));
+  assert.ok(seoMetadata.keywords.includes("槽极怎么算"));
   assert.equal(seoMetadata.alternates.canonical, SITE_URL);
   assert.equal(webApplicationSchema["@type"], "WebApplication");
   assert.match(SEO_COPY.definition, /槽极配/);
   assert.match(SEO_COPY.calculation, /槽数/);
+});
+
+test("configures static output for Netlify hosting", async () => {
+  const nextConfig = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+  const netlifyConfig = await readFile(new URL("../netlify.toml", import.meta.url), "utf8");
+
+  assert.match(nextConfig, /output:\s*"export"/);
+  assert.match(netlifyConfig, /command\s*=\s*"pnpm build"/);
+  assert.match(netlifyConfig, /publish\s*=\s*"dist\/client"/);
 });
 
 test("publishes crawlable robots and a single canonical sitemap URL", () => {
@@ -21,6 +34,14 @@ test("publishes crawlable robots and a single canonical sitemap URL", () => {
   assert.equal(rules.rules.allow, "/");
   assert.equal(rules.sitemap, `${SITE_URL}/sitemap.xml`);
   assert.deepEqual(entries.map(({ url }) => url), [SITE_URL]);
+});
+
+test("ships crawl files in static export assets", async () => {
+  const robots = await readFile(new URL("../public/robots.txt", import.meta.url), "utf8");
+  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+
+  assert.match(robots, /Sitemap: https:\/\/three-phase-winding-generator\.netlify\.app\/sitemap\.xml/);
+  assert.match(sitemap, /<loc>https:\/\/three-phase-winding-generator\.netlify\.app<\/loc>/);
 });
 
 test("renders a dedicated Chinese search explanation section", async () => {
@@ -74,7 +95,8 @@ test("renders the approved iron-core winding diagram with one centered label per
   assert.match(css, /\.diagram-route-order/);
   assert.match(component, /diagram-star-bus/);
   assert.match(component, /diagram-star-node/);
-  assert.match(component, /星点 N/);
+  assert.match(component, /中性点 N/);
+  assert.doesNotMatch(component, /星点 N/);
   assert.match(component, /U2 \/ V2 \/ W2/);
   assert.doesNotMatch(component, /endTerminal/);
   assert.doesNotMatch(component, /lowerMark/);
