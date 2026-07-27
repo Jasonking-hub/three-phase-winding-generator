@@ -28,12 +28,17 @@ test("configures static output for Netlify hosting", async () => {
   assert.match(netlifyConfig, /publish\s*=\s*"dist\/client"/);
 });
 
-test("publishes crawlable robots and a single canonical sitemap URL", () => {
+test("publishes crawlable robots and the current public sitemap URLs", () => {
   const rules = robots();
   const entries = sitemap();
   assert.equal(rules.rules.allow, "/");
   assert.equal(rules.sitemap, `${SITE_URL}/sitemap.xml`);
-  assert.deepEqual(entries.map(({ url }) => url), [SITE_URL]);
+  assert.deepEqual(entries.map(({ url }) => url), [SITE_URL, `${SITE_URL}/slot-pole`]);
+});
+
+test("publishes the slot pole calculator at its dedicated route", () => {
+  const paths = sitemap().map(({ url }) => new URL(url).pathname);
+  assert.ok(paths.includes("/slot-pole"));
 });
 
 test("ships crawl files in static export assets", async () => {
@@ -107,7 +112,7 @@ test("renders the approved iron-core winding diagram with one centered label per
 });
 
 test("renders the approved compact title and six-column winding table", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/slot-pole/page.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(page, /槽极配生成器/);
   assert.doesNotMatch(page, /className="kicker"/);

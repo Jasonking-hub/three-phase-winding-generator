@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import SeoContent from "./SeoContent";
-import WindingDiagram from "./WindingDiagram";
-import { generateWinding } from "./winding.js";
+import SeoContent from "../SeoContent";
+import WindingDiagram from "../WindingDiagram";
+import { generateWinding } from "../winding.js";
 
 const PHASE_CLASS: Record<string, string> = {
   A: "phase-a", U: "phase-a",
