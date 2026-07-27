@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build",
+    "build": "node --import ./scripts/vinext-windows-exit-shim.mjs ./node_modules/vinext/dist/cli.js build",
     "start": "vinext start",
     "test": "node --test tests/winding.test.mjs tests/seo.test.mjs tests/home.test.mjs tests/wire-layout.test.mjs tests/coil-resistance.test.mjs",
-    "test:build": "vinext build && node --test tests/rendered-html.test.mjs",
+    "test:build": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },

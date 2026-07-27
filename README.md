@@ -130,6 +130,8 @@ pnpm test:build
 
 项目使用静态导出，Netlify 发布目录为 `dist/client`。测试覆盖工作簿默认值、边界输入、首页注册表、SEO 与最终静态 HTML。
 
+Windows + Node 24 下，构建命令会预加载 `scripts/vinext-windows-exit-shim.mjs`，规避 Vinext 0.0.50 在预渲染服务器已关闭后立即强制退出所触发的 libuv 断言；仅成功退出会改为自然排空，真实构建错误仍保持非零退出码。其他平台不受影响。
+
 本轮桌面、键盘和移动端的实机检查见 [浏览器验收记录](docs/qa/2026-07-27-zx-toolbox-browser-qa.md)。
 
 ## SEO 与部署
