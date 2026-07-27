@@ -59,6 +59,7 @@ export default function HomeToolRail() {
           return (
             <Link
               className={styles.toolCard}
+              aria-label={`${tool.name}：${tool.description}`}
               data-active={isActive}
               href={tool.href}
               key={tool.id}
@@ -68,11 +69,11 @@ export default function HomeToolRail() {
             >
               <span className={styles.toolIndex}>{String(tool.index).padStart(2, "0")}</span>
               <ToolVisual visual={tool.visual} />
-              <span className={styles.toolFullContent}>
+              <span className={styles.toolFullContent} aria-hidden="true">
                 <strong>{tool.name}</strong>
                 <span>{tool.description}</span>
               </span>
-              <span className={styles.toolCompactTitle}>{tool.name}</span>
+              <span className={styles.toolCompactTitle} aria-hidden="true">{tool.name}</span>
             </Link>
           );
         })}

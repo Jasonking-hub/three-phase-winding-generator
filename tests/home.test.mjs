@@ -35,3 +35,17 @@ test("uses a full-width three-state grid rail with reduced-motion fallback", () 
   assert.match(homeCssSource, /650ms cubic-bezier\(0\.16, 1, 0\.3, 1\)/);
   assert.match(homeCssSource, /prefers-reduced-motion:\s*reduce/);
 });
+
+test("keeps all rail states, content layers, and mobile fallback accessible", () => {
+  assert.match(railSource, /aria-label=\{`\$\{tool\.name\}：\$\{tool\.description\}`\}/);
+  assert.match(railSource, /className=\{styles\.toolFullContent\}\s+aria-hidden="true"/);
+  assert.match(railSource, /className=\{styles\.toolCompactTitle\}\s+aria-hidden="true"/);
+  assert.match(homeCssSource, /\.toolRail\[data-active-id="wire-layout"\]\s*\{\s*grid-template-columns:\s*1fr 2\.2fr 1fr/);
+  assert.match(homeCssSource, /\.toolRail\[data-active-id="coil-resistance"\]\s*\{\s*grid-template-columns:\s*1fr 1fr 2\.2fr/);
+  assert.match(homeCssSource, /@media \(max-width: 1023px\) \{[\s\S]*?\.toolRail\[data-active-id="wire-layout"\],[\s\S]*?\.toolRail\[data-active-id="coil-resistance"\]\s*\{\s*grid-template-columns:\s*1fr/);
+  assert.match(homeCssSource, /\.toolFullContent\s*\{[\s\S]*?opacity:\s*1;[\s\S]*?transform:\s*translateY\(0\)/);
+  assert.match(homeCssSource, /\.toolCard:not\(\[data-active="true"\]\) \.toolFullContent\s*\{\s*opacity:\s*0;\s*transform:\s*translateY\(6px\)/);
+  assert.match(homeCssSource, /\.toolCard:not\(\[data-active="true"\]\) \.toolCompactTitle\s*\{\s*opacity:\s*1;\s*transform:\s*translateY\(0\)/);
+  assert.doesNotMatch(homeCssSource, /\.kicker,/);
+  assert.match(homeCssSource, /\.toolCard\s*\{\s*min-height:\s*144px;\s*display:\s*grid;/);
+});

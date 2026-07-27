@@ -22,7 +22,6 @@
   background: var(--color-paper, #f3f4ef);
 }
 
-.kicker,
 .sectionEyebrow,
 .toolIndex {
   margin: 0;
@@ -245,9 +244,6 @@
 
   .toolCard {
     min-height: 144px;
-  }
-
-  .toolCard {
     display: grid;
     grid-template-columns: auto 136px minmax(0, 1fr);
     align-items: center;
