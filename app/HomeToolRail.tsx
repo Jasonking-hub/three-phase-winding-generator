@@ -12,13 +12,24 @@ function ToolVisual({ visual }: { visual: string }) {
 
   if (visual === "wirePacking") {
     return (
-      <span className={styles.wirePackingVisual} aria-hidden="true">
-        <span className={styles.wireBoundaryLeft} />
-        <span className={styles.wireBoundaryBottom} />
-        <span className={`${styles.wireRow} ${styles.wireRowOne}`}><i /><i /><i /></span>
-        <span className={`${styles.wireRow} ${styles.wireRowTwo}`}><i /><i /></span>
-        <span className={`${styles.wireRow} ${styles.wireRowThree}`}><i /><i /><i /></span>
-      </span>
+      <svg
+        aria-hidden="true"
+        className={styles.wirePackingVisual}
+        viewBox="-1 -1 62 57"
+      >
+        <line className={styles.wireBoundary} x1="0" y1="0" x2="0" y2="54.641016" />
+        <line className={styles.wireBoundary} x1="0" y1="54.641016" x2="60" y2="54.641016" />
+        <g className={styles.wireCircles}>
+          <circle cx="10" cy="10" r="10" />
+          <circle cx="30" cy="10" r="10" />
+          <circle cx="50" cy="10" r="10" />
+          <circle cx="20" cy="27.320508" r="10" />
+          <circle cx="40" cy="27.320508" r="10" />
+          <circle cx="10" cy="44.641016" r="10" />
+          <circle cx="30" cy="44.641016" r="10" />
+          <circle cx="50" cy="44.641016" r="10" />
+        </g>
+      </svg>
     );
   }
 
@@ -49,6 +60,7 @@ export default function HomeToolRail() {
           const isActive = activeId === tool.id;
           return (
             <Link
+              aria-current={isActive ? "true" : undefined}
               className={styles.toolCard}
               data-active={isActive}
               href={tool.href}

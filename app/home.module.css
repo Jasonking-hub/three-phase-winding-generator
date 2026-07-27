@@ -142,6 +142,11 @@
   font-size: 0.875rem;
   line-height: 1.55;
   opacity: 0.76;
+  transition: opacity 540ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.toolCard:not([data-active="true"]) .toolContent span {
+  opacity: 0;
 }
 
 .slotPoleVisual,
@@ -158,51 +163,22 @@
 }
 
 .wirePackingVisual {
-  position: relative;
-  display: grid;
-  width: 132px;
-  height: 98px;
-  align-self: flex-start;
-  grid-template-rows: repeat(3, 24px);
-  gap: 3px;
-  padding: 8px 0 8px 10px;
-}
-
-.wireRow {
-  display: flex;
-  gap: 3px;
-}
-
-.wireRow i {
   display: block;
-  width: 21px;
-  height: 21px;
-  border: 2px solid var(--color-graphic, #c85f28);
-  border-radius: 50%;
+  width: min(112px, 100%);
+  height: auto;
+  align-self: flex-start;
+  overflow: hidden;
 }
 
-.wireRowTwo {
-  padding-left: 12px;
+.wireCircles {
+  fill: var(--color-surface, #fbfcf8);
+  stroke: var(--color-graphic, #c85f28);
+  stroke-width: 1.5;
 }
 
-.wireBoundaryLeft,
-.wireBoundaryBottom {
-  position: absolute;
-  background: var(--color-line, #cbd3d6);
-}
-
-.wireBoundaryLeft {
-  top: 2px;
-  bottom: 7px;
-  left: 0;
-  width: 2px;
-}
-
-.wireBoundaryBottom {
-  right: 48px;
-  bottom: 0;
-  left: 0;
-  height: 2px;
+.wireBoundary {
+  stroke: var(--color-line, #cbd3d6);
+  stroke-width: 2;
 }
 
 .resistanceVisual {
@@ -268,6 +244,10 @@
     align-items: center;
     gap: 16px;
   }
+
+  .toolCard:not([data-active="true"]) .toolContent span {
+    opacity: 0.76;
+  }
 }
 
 @media (max-width: 639px) {
@@ -293,14 +273,14 @@
     gap: 12px;
   }
 
-  .wirePackingVisual {
-    transform: scale(0.78);
-    transform-origin: left center;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .toolCard {
+    transition: none;
+  }
+
+  .toolContent span {
     transition: none;
   }
 
