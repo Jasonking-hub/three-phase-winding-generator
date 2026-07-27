@@ -20,14 +20,17 @@
 
 ---
 
-### Task 1: Lock the homepage rail contract with a failing test
+### Task 1: Implement the full-width fluid rail with TDD
 
 **Files:**
+- Modify: `app/page.tsx`
+- Modify: `app/HomeToolRail.tsx`
+- Modify: `app/home.module.css`
 - Modify: `tests/home.test.mjs`
 
 **Interfaces:**
-- Consumes: homepage source files as UTF-8 text.
-- Produces: regression coverage for full-width structure, active rail state, grid interpolation, and reduced motion.
+- Consumes: `TOOL_REGISTRY`, active tool id, existing `ToolVisual` variants, and homepage source files as UTF-8 text.
+- Produces: `<div className={styles.toolRail} data-active-id={activeId}>`, stable compact/full card content layers, and regression coverage for full-width structure, active rail state, grid interpolation, and reduced motion.
 
 - [ ] **Step 1: Add the failing source-contract test**
 
@@ -54,25 +57,7 @@ Run: `node --test tests/home.test.mjs`
 
 Expected: FAIL because `heroCopy` still exists and the rail has no `data-active-id` or CSS Grid state templates.
 
-- [ ] **Step 3: Commit only after Task 2 turns the test green**
-
-No standalone commit at RED state.
-
----
-
-### Task 2: Implement the full-width fluid rail
-
-**Files:**
-- Modify: `app/page.tsx`
-- Modify: `app/HomeToolRail.tsx`
-- Modify: `app/home.module.css`
-- Test: `tests/home.test.mjs`
-
-**Interfaces:**
-- Consumes: `TOOL_REGISTRY`, active tool id, existing `ToolVisual` variants.
-- Produces: `<div className={styles.toolRail} data-active-id={activeId}>` and stable compact/full card content layers.
-
-- [ ] **Step 1: Flatten the homepage structure**
+- [ ] **Step 3: Flatten the homepage structure**
 
 Change `app/page.tsx` so the hero contains one compact heading block followed by `HomeToolRail`; remove the bordered `heroCopy` card. Keep the exact `h1` text and JSON-LD.
 
@@ -86,7 +71,7 @@ Change `app/page.tsx` so the hero contains one compact heading block followed by
 </section>
 ```
 
-- [ ] **Step 2: Put active state on the rail and add stable content layers**
+- [ ] **Step 4: Put active state on the rail and add stable content layers**
 
 In `HomeToolRail.tsx`, remove the redundant section eyebrow and heading. Add `data-active-id={activeId}` to `toolRail`. Inside each card, keep the full title/description in a fixed-width layer and add a compact title layer used only by inactive cards. Preserve pointer, focus, Space-key, and link behavior.
 
@@ -96,7 +81,7 @@ In `HomeToolRail.tsx`, remove the redundant section eyebrow and heading. Add `da
 </div>
 ```
 
-- [ ] **Step 3: Replace flex sizing with three interpolated grid states**
+- [ ] **Step 5: Replace flex sizing with three interpolated grid states**
 
 In `home.module.css`:
 
@@ -118,13 +103,13 @@ In `home.module.css`:
 
 Remove `flex`, `flex-grow`, and their transition from `.toolCard`. Crossfade compact/full content with opacity and `translateY(6px)` using the same easing. Under `1024px`, set `grid-template-columns: 1fr` for every state and show full content. Under reduced motion, set all related transitions to `none`.
 
-- [ ] **Step 4: Run the focused test and confirm GREEN**
+- [ ] **Step 6: Run the focused test and confirm GREEN**
 
 Run: `node --test tests/home.test.mjs`
 
 Expected: 2 tests pass, 0 fail.
 
-- [ ] **Step 5: Run static and code verification**
+- [ ] **Step 7: Run static and code verification**
 
 Run: `npm test`
 
@@ -138,7 +123,7 @@ Run: `npm run test:build`
 
 Expected: production build exits 0 and rendered HTML tests pass.
 
-- [ ] **Step 6: Commit the implementation**
+- [ ] **Step 8: Commit the implementation**
 
 ```bash
 git add app/page.tsx app/HomeToolRail.tsx app/home.module.css tests/home.test.mjs
@@ -147,7 +132,7 @@ git commit -m "fix: smooth homepage tool rail"
 
 ---
 
-### Task 3: Browser acceptance
+### Task 2: Browser acceptance
 
 **Files:**
 - Modify: `docs/qa/2026-07-27-zx-toolbox-browser-qa.md`
