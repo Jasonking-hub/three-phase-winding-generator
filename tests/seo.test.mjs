@@ -1,22 +1,36 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
-import { SITE_URL, SEO_COPY, seoMetadata, webApplicationSchema } from "../app/seo.js";
+import { SITE_URL, SEO_COPY, seoMetadata } from "../app/seo.js";
 import robots from "../app/robots.js";
 import sitemap from "../app/sitemap.js";
 
-test("defines canonical Chinese metadata for slot pole matching", () => {
-  assert.equal(SITE_URL, "https://three-phase-winding-generator.netlify.app");
-  assert.equal(seoMetadata.title, "槽极配生成器 | 槽极配合计算 | 三相双层绕组");
-  assert.match(seoMetadata.description, /槽极配/);
-  assert.match(seoMetadata.description, /槽极怎么算/);
-  assert.ok(seoMetadata.keywords.includes("槽极配"));
-  assert.ok(seoMetadata.keywords.includes("槽极配合计算"));
-  assert.ok(seoMetadata.keywords.includes("槽极怎么算"));
-  assert.equal(seoMetadata.alternates.canonical, SITE_URL);
-  assert.equal(webApplicationSchema["@type"], "WebApplication");
+test("defines canonical Chinese metadata for Zhongxin Toolbox", () => {
+  assert.equal(SITE_URL, "https://zx-toolbox.netlify.app");
+  assert.match(String(seoMetadata.title.default ?? seoMetadata.title), /中欣工具箱/);
+  assert.match(seoMetadata.description, /电机/);
+  assert.ok(seoMetadata.keywords.includes("中欣工具箱"));
+  assert.ok(seoMetadata.keywords.includes("绕组计算"));
+  assert.equal(seoMetadata.alternates.canonical, "/");
   assert.match(SEO_COPY.definition, /槽极配/);
   assert.match(SEO_COPY.calculation, /槽数/);
+});
+
+test("describes the site and each calculator with structured SEO data", async () => {
+  const seo = await import("../app/seo.js");
+  assert.ok(seo.siteSchema, "siteSchema should be exported");
+  assert.equal(seo.siteSchema["@type"], "WebSite");
+  for (const [id, path] of [
+    ["slot-pole", "/slot-pole"],
+    ["wire-layout", "/wire-layout"],
+    ["coil-resistance", "/coil-resistance"],
+  ]) {
+    const metadata = seo.createToolMetadata(id);
+    const schema = seo.createToolSchema(id);
+    assert.equal(metadata.alternates.canonical, path);
+    assert.equal(schema["@type"], "WebApplication");
+    assert.equal(new URL(schema.url).pathname, path);
+  }
 });
 
 test("configures static output for Netlify hosting", async () => {
@@ -28,12 +42,17 @@ test("configures static output for Netlify hosting", async () => {
   assert.match(netlifyConfig, /publish\s*=\s*"dist\/client"/);
 });
 
-test("publishes crawlable robots and the current public sitemap URLs", () => {
+test("publishes crawlable robots and all toolbox routes", () => {
   const rules = robots();
   const entries = sitemap();
   assert.equal(rules.rules.allow, "/");
   assert.equal(rules.sitemap, `${SITE_URL}/sitemap.xml`);
-  assert.deepEqual(entries.map(({ url }) => url), [SITE_URL, `${SITE_URL}/slot-pole`]);
+  assert.deepEqual(entries.map(({ url }) => new URL(url).pathname), [
+    "/",
+    "/slot-pole",
+    "/wire-layout",
+    "/coil-resistance",
+  ]);
 });
 
 test("publishes the slot pole calculator at its dedicated route", () => {
@@ -45,8 +64,11 @@ test("ships crawl files in static export assets", async () => {
   const robots = await readFile(new URL("../public/robots.txt", import.meta.url), "utf8");
   const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
 
-  assert.match(robots, /Sitemap: https:\/\/three-phase-winding-generator\.netlify\.app\/sitemap\.xml/);
-  assert.match(sitemap, /<loc>https:\/\/three-phase-winding-generator\.netlify\.app<\/loc>/);
+  assert.match(robots, /Sitemap: https:\/\/zx-toolbox\.netlify\.app\/sitemap\.xml/);
+  for (const route of ["", "/slot-pole", "/wire-layout", "/coil-resistance"]) {
+    assert.match(sitemap, new RegExp(`<loc>https://zx-toolbox\\.netlify\\.app${route}<\\/loc>`));
+  }
+  assert.doesNotMatch(`${robots}\n${sitemap}`, /three-phase-winding-generator/);
 });
 
 test("renders a dedicated Chinese search explanation section", async () => {

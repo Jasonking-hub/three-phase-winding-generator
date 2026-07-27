@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://three-phase-winding-generator.netlify.app</loc>
-  </url>
+  <url><loc>https://zx-toolbox.netlify.app</loc></url>
+  <url><loc>https://zx-toolbox.netlify.app/slot-pole</loc></url>
+  <url><loc>https://zx-toolbox.netlify.app/wire-layout</loc></url>
+  <url><loc>https://zx-toolbox.netlify.app/coil-resistance</loc></url>
 </urlset>

@@ -1,4 +1,5 @@
-export const SITE_URL = "https://three-phase-winding-generator.netlify.app";
+export const SITE_URL = "https://zx-toolbox.netlify.app";
+export const SITE_NAME = "中欣工具箱";
 
 export const SEO_COPY = {
   definition: "槽极配用于确定三相绕组中槽数、极数和线圈相带的对应关系。",
@@ -9,27 +10,93 @@ export const SEO_COPY = {
 };
 
 export const seoMetadata = {
-  title: "槽极配生成器 | 槽极配合计算 | 三相双层绕组",
-  description: "免费三相双层绕组槽极配生成器。输入槽数和总极数，完成槽极配合计算；了解槽极怎么算、节距、相别与线圈接线表。",
-  keywords: ["槽极配", "槽极配合计算", "槽极怎么算", "槽数极数怎么算", "三相绕组", "三相双层绕组", "绕组节距计算"],
-  alternates: { canonical: SITE_URL },
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "中欣工具箱｜电机与绕组工程计算",
+    template: "%s｜中欣工具箱",
+  },
+  description: "中欣工具箱提供槽极配、漆包线排线和线圈电阻等电机与绕组计算工具，所有计算均在浏览器本地完成。",
+  keywords: ["中欣工具箱", "电机计算工具", "绕组计算", "槽极配", "漆包线排线", "线圈电阻"],
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "zh_CN",
     url: SITE_URL,
-    title: "槽极配生成器 | 槽极配合计算",
-    description: "计算三相双层绕组的槽极配、节距、相别和线圈接线。",
+    siteName: SITE_NAME,
+    title: "中欣工具箱｜电机与绕组工程计算",
+    description: "槽极配、漆包线排线与线圈电阻，集中在一个本地运行的工程工具箱中。",
     images: ["/og.png"],
   },
 };
 
-export const webApplicationSchema = {
+export const siteSchema = {
   "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "槽极配生成器",
-  applicationCategory: "EngineeringApplication",
-  operatingSystem: "Web",
+  "@type": "WebSite",
+  name: SITE_NAME,
   url: SITE_URL,
   inLanguage: "zh-CN",
   description: seoMetadata.description,
 };
+
+export const TOOL_SEO = {
+  "slot-pole": {
+    name: "槽极配生成器",
+    path: "/slot-pole",
+    description: "输入槽数与总极数，生成三相双层绕组推荐节距、线圈接线表与接线图。",
+    keywords: ["槽极配", "槽极配合计算", "三相双层绕组", "绕组节距"],
+  },
+  "wire-layout": {
+    name: "漆包线排线计算器",
+    path: "/wire-layout",
+    description: "按含漆膜线径与边界计算梅花形密排的层数、根数、尺寸和剩余量。",
+    keywords: ["漆包线排线", "梅花形密排", "绕线排布", "线径计算"],
+  },
+  "coil-resistance": {
+    name: "线圈电阻计算器",
+    path: "/coil-resistance",
+    description: "按裸线径、线圈尺寸和匝数计算圆形线圈或电机线圈的铜线长度与电阻。",
+    keywords: ["线圈电阻", "电机线圈", "铜线电阻", "漆包线电阻"],
+  },
+};
+
+function getToolSeo(toolId) {
+  const tool = TOOL_SEO[toolId];
+  if (!tool) throw new RangeError(`Unknown tool: ${toolId}`);
+  return tool;
+}
+
+export function createToolMetadata(toolId) {
+  const tool = getToolSeo(toolId);
+  const url = `${SITE_URL}${tool.path}`;
+  return {
+    title: tool.name,
+    description: tool.description,
+    keywords: tool.keywords,
+    alternates: { canonical: tool.path },
+    openGraph: {
+      type: "website",
+      locale: "zh_CN",
+      url,
+      siteName: SITE_NAME,
+      title: `${tool.name}｜${SITE_NAME}`,
+      description: tool.description,
+      images: ["/og.png"],
+    },
+  };
+}
+
+export function createToolSchema(toolId) {
+  const tool = getToolSeo(toolId);
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: tool.name,
+    applicationCategory: "EngineeringApplication",
+    operatingSystem: "Web",
+    url: `${SITE_URL}${tool.path}`,
+    inLanguage: "zh-CN",
+    description: tool.description,
+  };
+}
+
+export const webApplicationSchema = createToolSchema("slot-pole");

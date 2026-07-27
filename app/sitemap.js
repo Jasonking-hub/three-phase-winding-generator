@@ -1,18 +1,10 @@
 import { SITE_URL } from "./seo.js";
 
 export default function sitemap() {
-  return [
-    {
-      url: SITE_URL,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 1,
-    },
-    {
-      url: `${SITE_URL}/slot-pole`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-  ];
+  return ["", "/slot-pole", "/wire-layout", "/coil-resistance"].map((path, index) => ({
+    url: `${SITE_URL}${path}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: index === 0 ? 1 : 0.9,
+  }));
 }
