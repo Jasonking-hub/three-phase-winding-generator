@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
-import { seoMetadata, siteSchema } from "./seo.js";
+import { seoMetadata } from "./seo.js";
 import "./globals.css";
 
 export const metadata: Metadata = seoMetadata;
@@ -14,10 +14,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SiteHeader />
         <div id="main-content">{children}</div>
         <SiteFooter />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}
-        />
       </body>
     </html>
   );

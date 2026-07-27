@@ -130,6 +130,8 @@ pnpm test:build
 
 项目使用静态导出，Netlify 发布目录为 `dist/client`。测试覆盖工作簿默认值、边界输入、首页注册表、SEO 与最终静态 HTML。
 
+本轮桌面、键盘和移动端的实机检查见 [浏览器验收记录](docs/qa/2026-07-27-zx-toolbox-browser-qa.md)。
+
 ## SEO 与部署
 
 - 新规范网址统一使用 `https://zx-toolbox.netlify.app`。

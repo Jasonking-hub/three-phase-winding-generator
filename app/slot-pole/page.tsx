@@ -15,12 +15,14 @@ function NumberField({
   id,
   label,
   value,
+  min,
   onChange,
   hint,
 }: {
   id: string;
   label: string;
   value: number;
+  min: number;
   onChange: (value: number) => void;
   hint: string;
 }) {
@@ -30,7 +32,7 @@ function NumberField({
       <input
         id={id}
         type="number"
-        min="3"
+        min={min}
         max="120"
         step="1"
         value={value}
@@ -74,8 +76,8 @@ export default function Home() {
           </div>
 
           <div className="fields">
-            <NumberField id="slots" label="槽数 Q" value={slots} onChange={setSlots} hint="3 至 120 的整数，且须为 3 的倍数" />
-            <NumberField id="poles" label="总极数 P" value={poles} onChange={setPoles} hint="2 至 120 的偶数" />
+            <NumberField id="slots" label="槽数 Q" value={slots} min={3} onChange={setSlots} hint="3 至 120 的整数，且须为 3 的倍数" />
+            <NumberField id="poles" label="总极数 P" value={poles} min={2} onChange={setPoles} hint="2 至 120 的偶数" />
 
             <fieldset className="field choice-field">
               <legend>相别显示</legend>

@@ -60,7 +60,6 @@ export default function HomeToolRail() {
           const isActive = activeId === tool.id;
           return (
             <Link
-              aria-current={isActive ? "true" : undefined}
               className={styles.toolCard}
               data-active={isActive}
               href={tool.href}
