@@ -25,6 +25,20 @@ function invalid(errors) {
   return { valid: false, errors, warning: NORMAL, result: null };
 }
 
+function hasUnsafeResult(result) {
+  return Object.values(result).some((value) => !Number.isFinite(value));
+}
+
+export function parseRequiredNumber(raw) {
+  if (typeof raw !== "string" || raw.trim() === "") {
+    return { valid: false, value: Number.NaN, error: "此项为必填。" };
+  }
+  const value = Number(raw);
+  return Number.isFinite(value)
+    ? { valid: true, value, error: "" }
+    : { valid: false, value: Number.NaN, error: "请输入有限数值。" };
+}
+
 function buildDimensions(diameter, layers, roots, mode) {
   const verticalPitch = diameter * Math.sqrt(3) / 2;
   const offset = diameter / 2;
@@ -58,6 +72,9 @@ export function calculateLayerDimensions({ diameter, layers, roots, mode }) {
   if (Object.keys(errors).length) return invalid(errors);
 
   const result = buildDimensions(diameter, layers, roots, mode);
+  if (hasUnsafeResult(result)) {
+    return invalid({ diameter: "输入过大，计算结果超出数值范围。" });
+  }
   const warning = mode === PACKING_MODES.BOUNDARY && layers >= 2 && roots < 2
     ? "注意：水平根数小于 2 时，无法形成完整品字形错排。"
     : NORMAL;
@@ -81,7 +98,10 @@ export function calculateCapacity({ diameter, maxWidth, maxThickness, mode }) {
     : mode === PACKING_MODES.SAME && layers >= 2
       ? Math.max(0, Math.floor((maxWidth - diameter / 2) / diameter))
       : Math.floor(maxWidth / diameter);
-  const dimensions = layers === 0 || roots === 0
+  if (!Number.isSafeInteger(layers) || !Number.isSafeInteger(roots)) {
+    return invalid({ diameter: "输入组合使反推结果超出安全数值范围。" });
+  }
+  const dimensions = layers === 0
     ? zeroDimensions(diameter)
     : buildDimensions(diameter, layers, roots, mode);
   const result = {
@@ -91,6 +111,9 @@ export function calculateCapacity({ diameter, maxWidth, maxThickness, mode }) {
     remainingWidth: maxWidth - dimensions.width,
     remainingThickness: maxThickness - dimensions.height,
   };
+  if (hasUnsafeResult(result)) {
+    return invalid({ diameter: "输入组合使计算结果超出数值范围。" });
+  }
   const warning = mode === PACKING_MODES.BOUNDARY && layers >= 2 && roots < 2
     ? "注意：水平宽度不足以形成完整品字形错排。"
     : mode === PACKING_MODES.SAME && layers >= 2 && maxWidth < 1.5 * diameter
@@ -106,4 +129,41 @@ export function formatDimension(value) {
 
 export function formatInteger(value) {
   return isFiniteNumber(value) ? String(Math.trunc(value)) : "—";
+}
+
+export function buildPackingPreviewGeometry({
+  diameter,
+  layers,
+  roots,
+  mode,
+  maxLayers = 24,
+  maxRoots = 32,
+}) {
+  const safeDiameter = isFiniteNumber(diameter) && diameter > 0 ? diameter : 1;
+  const safeLayers = Math.max(0, Math.min(Number.isSafeInteger(layers) ? layers : 0, maxLayers));
+  const safeRoots = Math.max(0, Math.min(Number.isSafeInteger(roots) ? roots : 0, maxRoots));
+  const verticalPitch = safeDiameter * Math.sqrt(3) / 2;
+  const circles = Array.from({ length: safeLayers }, (_, row) => {
+    const count = mode === PACKING_MODES.BOUNDARY && row % 2 === 1
+      ? Math.max(safeRoots - 1, 0)
+      : safeRoots;
+    return Array.from({ length: count }, (_, column) => ({
+      cx: safeDiameter / 2 + column * safeDiameter + (row % 2 ? safeDiameter / 2 : 0),
+      cy: safeDiameter / 2 + row * verticalPitch,
+      r: safeDiameter / 2,
+    }));
+  }).flat();
+  const width = safeRoots * safeDiameter
+    + (mode === PACKING_MODES.SAME && safeLayers >= 2 ? safeDiameter / 2 : 0);
+  const height = safeLayers > 0
+    ? safeDiameter + (safeLayers - 1) * verticalPitch
+    : 0;
+
+  return {
+    circles,
+    width,
+    height,
+    bottomBoundaryY: height,
+    truncated: safeLayers !== layers || safeRoots !== roots,
+  };
 }

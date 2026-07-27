@@ -8,6 +8,8 @@ import {
   formatInteger,
 } from "../app/wire-layout/wire-layout.js";
 
+const wireLayoutModule = await import("../app/wire-layout/wire-layout.js");
+
 const EPSILON = 1e-12;
 
 function near(actual, expected, message) {
@@ -84,6 +86,72 @@ test("returns valid zero capacity for insufficient boundaries without leaking in
   assert.equal(calculation.result.height, 0);
   assert.equal(calculation.result.width, 0);
   assert.equal(calculation.result.total, 0);
+});
+
+test("keeps formula height and SAME offset when layers fit but zero roots fit", () => {
+  const calculation = calculateCapacity({ diameter: 1, maxWidth: 0.5, maxThickness: 2, mode: PACKING_MODES.SAME });
+  assert.equal(calculation.valid, true);
+  assert.equal(calculation.result.layers, 2);
+  assert.equal(calculation.result.roots, 0);
+  near(calculation.result.height, 1.8660254037844386, "H with zero roots");
+  assert.equal(calculation.result.width, 0.5);
+  assert.equal(calculation.result.remainingWidth, 0);
+  near(calculation.result.remainingThickness, 0.1339745962155614, "remaining thickness with zero roots");
+  assert.equal(calculation.result.total, 0);
+});
+
+test("rejects finite inputs whose derived dimensions overflow", () => {
+  const dimensions = calculateLayerDimensions({
+    diameter: Number.MAX_VALUE,
+    layers: 2,
+    roots: 2,
+    mode: PACKING_MODES.SAME,
+  });
+  assert.equal(dimensions.valid, false);
+  assert.equal(dimensions.result, null);
+  assert.equal(typeof dimensions.errors.diameter, "string");
+
+  const capacity = calculateCapacity({
+    diameter: Number.MIN_VALUE,
+    maxWidth: 1,
+    maxThickness: 1,
+    mode: PACKING_MODES.SAME,
+  });
+  assert.equal(capacity.valid, false);
+  assert.equal(capacity.result, null);
+  assert.equal(typeof capacity.errors.diameter, "string");
+});
+
+test("builds preview bottom boundary tangent to the final wire row", () => {
+  assert.equal(typeof wireLayoutModule.buildPackingPreviewGeometry, "function");
+  const preview = wireLayoutModule.buildPackingPreviewGeometry({
+    diameter: 1,
+    layers: 2,
+    roots: 2,
+    mode: PACKING_MODES.SAME,
+  });
+  near(preview.height, 1.8660254037844386, "preview height");
+  assert.equal(preview.bottomBoundaryY, preview.height);
+  assert.equal(Math.max(...preview.circles.map((circle) => circle.cy + circle.r)), preview.height);
+});
+
+test("distinguishes empty required values from invalid numeric values", () => {
+  assert.equal(typeof wireLayoutModule.parseRequiredNumber, "function");
+  assert.deepEqual(wireLayoutModule.parseRequiredNumber(""), {
+    valid: false,
+    value: Number.NaN,
+    error: "此项为必填。",
+  });
+  assert.deepEqual(wireLayoutModule.parseRequiredNumber("  "), {
+    valid: false,
+    value: Number.NaN,
+    error: "此项为必填。",
+  });
+  assert.deepEqual(wireLayoutModule.parseRequiredNumber("1.25"), {
+    valid: true,
+    value: 1.25,
+    error: "",
+  });
 });
 
 test("rejects non-finite, non-positive, and non-integer layer inputs", () => {
