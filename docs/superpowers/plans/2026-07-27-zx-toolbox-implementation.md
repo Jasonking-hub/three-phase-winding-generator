@@ -86,15 +86,14 @@ git commit -m "test: establish toolbox test runner"
 - 验证：`app/winding.js`
 - 验证：`app/WindingDiagram.tsx`
 
-### 步骤 1：先写路由结构失败测试
+### 步骤 1：先写公开路由失败测试
 
-在 `tests/seo.test.mjs` 加入源文件断言：
+在 `tests/seo.test.mjs` 通过 `sitemap()` 的可观察输出断言 `/slot-pole` 已成为公开路由：
 
 ```js
-test("slot-pole calculator lives at its own route", () => {
-  const source = readFileSync("app/slot-pole/page.tsx", "utf8");
-  assert.match(source, /generateWinding/);
-  assert.match(source, /WindingDiagram/);
+test("slot-pole calculator has a public route", () => {
+  const paths = sitemap().map((entry) => new URL(entry.url).pathname);
+  assert.ok(paths.includes("/slot-pole"));
 });
 ```
 
@@ -104,7 +103,7 @@ test("slot-pole calculator lives at its own route", () => {
 pnpm exec node --test tests/seo.test.mjs
 ```
 
-预期：因 `app/slot-pole/page.tsx` 不存在而失败。
+预期：因当前 sitemap 只有根路由而失败。
 
 ### 步骤 2：移动页面且只改导入路径
 
@@ -169,14 +168,7 @@ test("registry exposes the three public tools in order", async () => {
 });
 ```
 
-并读取页面/CSS 源文件断言：
-
-- H1 为“中欣工具箱”。
-- 三个 href 均存在。
-- 存在“更多工具”，但它不是空链接。
-- 交互同时处理 `onPointerEnter`、`onFocus`、Enter 和 Space。
-- CSS 包含 `540ms cubic-bezier(.22, 1, .36, 1)`。
-- CSS 包含 `prefers-reduced-motion: reduce` 和移动端单列规则。
+静态页面可观察行为放到任务 9 的构建产物测试：H1 为“中欣工具箱”、三个 href 正确、“更多工具”不是空链接。hover、focus、Enter/Space、动效、reduced-motion 和移动端单列在任务 9 用真实浏览器验收，不用源码字符串断言冒充交互测试。
 
 运行：
 
@@ -329,15 +321,9 @@ git commit -m "feat: replicate enamel wire packing formulas"
 - 新建：`app/wire-layout/wire-layout.module.css`
 - 修改：`tests/wire-layout.test.mjs`
 
-### 步骤 1：写页面源文件失败测试
+### 步骤 1：写 UI 所依赖的格式化行为失败测试
 
-断言页面包含：
-
-- “按层数计算尺寸”和“按最大尺寸反推”两个计算区。
-- 默认值 `0.87/11/4` 和 `0.62/1.8/3.6`。
-- 两种排布模式。
-- 输入 `label`、单位、错误关联和结果 `aria-live="polite"`。
-- 真实梅花形密排预览，不使用随机点阵。
+在计算模块导出 `formatDimension` 和 `formatInteger`，测试整数不显示小数、尺寸显示三位且无效值不输出 `NaN`/Infinity。页面语义、默认值和真实梅花形密排预览在任务 9 通过构建产物与真实浏览器验收。
 
 ### 步骤 2：实现客户端计算器
 
@@ -440,9 +426,9 @@ git commit -m "feat: replicate coil resistance formulas"
 - 新建：`app/coil-resistance/coil-resistance.module.css`
 - 修改：`tests/coil-resistance.test.mjs`
 
-### 步骤 1：写页面源文件失败测试
+### 步骤 1：写 UI 所依赖的格式化行为失败测试
 
-断言存在圆形线圈与电机线圈两个清晰区块、全部 Excel 默认值、单位、字段错误关系、结果 live region，以及工作簿假设“未包含引出线/接头”和“P-P 对称星形”。
+在计算模块导出 `formatLength` 和 `formatResistance`，测试长度三位、电阻六位且无效值不输出 `NaN`/Infinity。圆形线圈/电机线圈区块、默认值、单位、错误关联、live region 与工作簿假设在任务 9 通过构建产物和真实浏览器验收。
 
 ### 步骤 2：实现客户端计算器
 
@@ -490,7 +476,7 @@ assert.deepEqual(
 );
 ```
 
-再断言 robots 指向新域名、首页输出 `WebSite`、三个工具页各自输出/声明 `WebApplication`，静态 `public/robots.txt` 与 `public/sitemap.xml` 不含旧域名。
+再通过导出函数的真实返回值断言 robots 指向新域名、首页 schema 类型为 `WebSite`、三个工具 schema 类型为 `WebApplication`。静态 `public/robots.txt`、`public/sitemap.xml` 与 HTML 的最终内容由任务 9 对构建产物验证。
 
 运行：
 
@@ -575,7 +561,25 @@ coil-resistance/index.html
 
 若导出器使用等价扁平 HTML 命名，以实际静态路由清单为准，但四个 URL 必须可直接打开。
 
-### 步骤 4：检查构建产物
+### 步骤 4：添加并运行构建产物行为测试
+
+新建 `tests/rendered-html.test.mjs`，对 `dist/client` 的实际页面读取并解析可见 HTML，断言：
+
+- 首页 H1 为“中欣工具箱”，三个工具链接指向正确路由。
+- “更多工具”是说明区而不是空链接。
+- 每个工具页有唯一标题、canonical、表单标签和默认值。
+- sitemap、robots 和四个 HTML 页面均使用新域名。
+- 可见文本无 `NaN`、Infinity、`#DIV/0!`、`#REF!`。
+
+运行：
+
+```powershell
+pnpm exec node --test tests/rendered-html.test.mjs
+```
+
+预期：全部通过。测试断言最终构建行为，不读取 React/CSS 源文件。
+
+### 步骤 5：检查构建产物
 
 在 `dist/client` 搜索并确认：
 
@@ -584,7 +588,7 @@ coil-resistance/index.html
 - 可见文本不存在 `NaN`、`Infinity`、`#DIV/0!`、`#REF!`。
 - `netlify.toml` 仍发布 `dist/client`。
 
-### 步骤 5：浏览器验收
+### 步骤 6：浏览器验收
 
 使用本地生产构建或开发服务器检查：
 
@@ -595,7 +599,7 @@ coil-resistance/index.html
 - 两个 Excel 默认示例与测试数值一致。
 - 槽极配生成、相别切换、表格、接线图和缩放正常。
 
-### 步骤 6：最终提交
+### 步骤 7：最终提交
 
 ```powershell
 git status --short
