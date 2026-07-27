@@ -7,13 +7,10 @@ export default function HomePage() {
     <>
       <main className={styles.homePage}>
         <section className={styles.hero} aria-labelledby="home-title">
-          <div className={styles.heroCopy}>
-            <p className={styles.kicker}>电机工程计算</p>
+          <header className={styles.homeHeading}>
             <h1 id="home-title">中欣工具箱</h1>
-            <p className={styles.summary}>
-              为槽极配、漆包线排线和线圈电阻提供可追溯的本地工程计算。
-            </p>
-          </div>
+            <p>槽极配、漆包线排线与线圈电阻，一处进入。</p>
+          </header>
           <HomeToolRail />
         </section>
         <section className={styles.moreTools} aria-labelledby="more-tools-title">

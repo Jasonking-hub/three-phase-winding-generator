@@ -52,10 +52,8 @@ export default function HomeToolRail() {
   };
 
   return (
-    <section className={styles.toolSection} aria-labelledby="tool-rail-title">
-      <p className={styles.sectionEyebrow}>核心计算索引</p>
-      <h2 id="tool-rail-title">从工程条件进入计算</h2>
-      <div className={styles.toolRail}>
+    <section className={styles.toolSection} aria-label="核心计算工具">
+      <div className={styles.toolRail} data-active-id={activeId}>
         {TOOL_REGISTRY.map((tool) => {
           const isActive = activeId === tool.id;
           return (
@@ -70,10 +68,11 @@ export default function HomeToolRail() {
             >
               <span className={styles.toolIndex}>{String(tool.index).padStart(2, "0")}</span>
               <ToolVisual visual={tool.visual} />
-              <span className={styles.toolContent}>
+              <span className={styles.toolFullContent}>
                 <strong>{tool.name}</strong>
                 <span>{tool.description}</span>
               </span>
+              <span className={styles.toolCompactTitle}>{tool.name}</span>
             </Link>
           );
         })}
