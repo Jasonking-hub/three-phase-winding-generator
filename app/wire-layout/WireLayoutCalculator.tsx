@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   PACKING_MODES,
   buildPackingPreviewGeometry,
+  buildWarningStatus,
   calculateCapacity,
   calculateLayerDimensions,
   formatDimension,
@@ -58,20 +59,21 @@ function ResultRow({ label, value, unit = "mm" }: { label: string; value: number
 
 function PackingPreview({ diameter, layers, roots, mode }: { diameter: number; layers: number; roots: number; mode: Mode }) {
   const preview = buildPackingPreviewGeometry({ diameter, layers, roots, mode });
-  const safeDiameter = Number.isFinite(diameter) && diameter > 0 ? diameter : 1;
-  const padding = safeDiameter * .4;
-  const viewWidth = Math.max(preview.width, safeDiameter) + 2 * padding;
-  const viewHeight = Math.max(preview.height, safeDiameter) + 2 * padding;
 
-  return <figure className={styles.preview} aria-labelledby="packing-preview-title">
-    <figcaption id="packing-preview-title"><strong>梅花形密排预览</strong><span>左、下边界为外包络基准</span></figcaption>
-    <svg viewBox={`${-padding} ${-padding} ${viewWidth} ${viewHeight}`} role="img" aria-label="圆线梅花形密排图">
-      <line x1={0} y1={0} x2={0} y2={preview.bottomBoundaryY} className={styles.boundary} />
-      <line x1={0} y1={preview.bottomBoundaryY} x2={preview.width} y2={preview.bottomBoundaryY} className={styles.boundary} />
-      {preview.circles.map(({ cx, cy, r }, index) => <circle key={index} cx={cx} cy={cy} r={r} className={styles.wire} />)}
-    </svg>
+  return <figure className={styles.preview}>
+    <figcaption><strong>梅花形密排预览</strong><span>左、下边界为外包络基准</span></figcaption>
+    {preview.drawable ? <svg viewBox={preview.viewBox.join(" ")} role="img" aria-label="圆线梅花形密排图">
+      {preview.circles.map(({ cx, cy, r }, index) => <circle key={index} cx={cx} cy={cy} r={r} fill={preview.wireFill} stroke={preview.wireStroke} strokeWidth={preview.wireStrokeWidth} className={styles.wire} />)}
+      <line x1={0} y1={0} x2={0} y2={preview.bottomBoundaryY} stroke={preview.boundaryStroke} strokeWidth={preview.boundaryStrokeWidth} className={styles.boundary} />
+      <line x1={0} y1={preview.bottomBoundaryY} x2={preview.width} y2={preview.bottomBoundaryY} stroke={preview.boundaryStroke} strokeWidth={preview.boundaryStrokeWidth} className={styles.boundary} />
+    </svg> : <p className={styles.previewEmpty}>{preview.emptyMessage}</p>}
     {preview.truncated ? <p>预览已截取</p> : null}
   </figure>;
+}
+
+function WarningStatus({ warning }: { warning: string }) {
+  const status = buildWarningStatus(warning);
+  return <aside className={`${styles.status} ${styles[status.tone]}`} role="status">{status.text}</aside>;
 }
 
 export default function WireLayoutCalculator() {
@@ -93,7 +95,7 @@ export default function WireLayoutCalculator() {
           <div className={styles.inputs}><Field id="layer-diameter" label="含漆膜实际外径 D" unit="mm" value={layerInput.diameter} error={fieldError(layerInput.diameter, layer.errors.diameter)} onChange={setLayer("diameter")} /><Field id="layers" label="垂直层数 M" unit="层" value={layerInput.layers} error={fieldError(layerInput.layers, layer.errors.layers)} onChange={setLayer("layers")} /><Field id="roots" label="水平根数 N" unit="根" value={layerInput.roots} error={fieldError(layerInput.roots, layer.errors.roots)} onChange={setLayer("roots")} /><ModeControl value={layerMode} onChange={setLayerMode} label="排布模式" /></div>
           <div className={styles.output} aria-live="polite"><h3>计算结果</h3>{layer.valid && layer.result ? <><ResultRow label="层间距 Pv" value={layer.result.verticalPitch} /><ResultRow label="水平错位 Offset" value={layer.result.offset} /><ResultRow label="实际高度 H" value={layer.result.height} /><ResultRow label="实际宽度 W" value={layer.result.width} /><ResultRow label="总根数 Total" value={layer.result.total} unit="" /><PackingPreview diameter={parse(layerInput.diameter)} layers={parse(layerInput.layers)} roots={parse(layerInput.roots)} mode={layerMode} /></> : <p className={styles.empty}>请修正输入后计算。</p>}</div>
         </div>
-        {layer.warning !== "正常" ? <aside className={styles.warning}>{layer.warning}</aside> : null}
+        <WarningStatus warning={layer.warning} />
       </section>
       <section className={styles.calculator} aria-labelledby="capacity-title">
         <div className={styles.sectionTitle}><p>反向计算</p><h2 id="capacity-title">按最大尺寸反推</h2></div>
@@ -101,7 +103,7 @@ export default function WireLayoutCalculator() {
           <div className={styles.inputs}><Field id="capacity-diameter" label="含漆膜实际外径 D" unit="mm" value={capacityInput.diameter} error={fieldError(capacityInput.diameter, capacity.errors.diameter)} onChange={setCapacity("diameter")} /><Field id="max-width" label="最大宽度 Wmax" unit="mm" value={capacityInput.maxWidth} error={fieldError(capacityInput.maxWidth, capacity.errors.maxWidth)} onChange={setCapacity("maxWidth")} /><Field id="max-thickness" label="最大厚度 Tmax" unit="mm" value={capacityInput.maxThickness} error={fieldError(capacityInput.maxThickness, capacity.errors.maxThickness)} onChange={setCapacity("maxThickness")} /><ModeControl value={capacityMode} onChange={setCapacityMode} label="排布模式" /></div>
           <div className={styles.output} aria-live="polite"><h3>反推结果</h3>{capacity.valid && capacity.result ? <><ResultRow label="层间距 Pv" value={capacity.result.verticalPitch} /><ResultRow label="垂直层数 M" value={capacity.result.layers} unit="" /><ResultRow label="水平根数 N" value={capacity.result.roots} unit="" /><ResultRow label="实际高度 H" value={capacity.result.height} /><ResultRow label="实际宽度 W" value={capacity.result.width} /><ResultRow label="宽度剩余量" value={capacity.result.remainingWidth} /><ResultRow label="厚度剩余量" value={capacity.result.remainingThickness} /><ResultRow label="总根数 Total" value={capacity.result.total} unit="" /><PackingPreview diameter={parse(capacityInput.diameter)} layers={capacity.result.layers} roots={capacity.result.roots} mode={capacityMode} /></> : <p className={styles.empty}>请修正输入后计算。</p>}</div>
         </div>
-        {capacity.warning !== "正常" ? <aside className={styles.warning}>{capacity.warning}</aside> : null}
+        <WarningStatus warning={capacity.warning} />
       </section>
     </div>
     <aside className={styles.assumption}><strong>Excel 假设</strong><span>圆线不压扁，不含张力、漆膜误差、浸漆、工艺余量。</span></aside>

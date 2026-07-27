@@ -4,6 +4,8 @@ export const PACKING_MODES = {
 };
 
 const NORMAL = "正常";
+const VERTICAL_PITCH_FACTOR = Math.sqrt(3) / 2;
+const PREVIEW_DIAMETER = 32;
 
 function isFiniteNumber(value) {
   return typeof value === "number" && Number.isFinite(value);
@@ -40,7 +42,7 @@ export function parseRequiredNumber(raw) {
 }
 
 function buildDimensions(diameter, layers, roots, mode) {
-  const verticalPitch = diameter * Math.sqrt(3) / 2;
+  const verticalPitch = diameter * VERTICAL_PITCH_FACTOR;
   const offset = diameter / 2;
   const height = diameter + (layers - 1) * verticalPitch;
   const width = mode === PACKING_MODES.SAME
@@ -55,7 +57,7 @@ function buildDimensions(diameter, layers, roots, mode) {
 
 function zeroDimensions(diameter = 0) {
   return {
-    verticalPitch: diameter * Math.sqrt(3) / 2,
+    verticalPitch: diameter * VERTICAL_PITCH_FACTOR,
     offset: diameter / 2,
     height: 0,
     width: 0,
@@ -89,7 +91,7 @@ export function calculateCapacity({ diameter, maxWidth, maxThickness, mode }) {
   validateMode(mode, errors);
   if (Object.keys(errors).length) return invalid(errors);
 
-  const verticalPitch = diameter * Math.sqrt(3) / 2;
+  const verticalPitch = diameter * VERTICAL_PITCH_FACTOR;
   const layers = diameter <= 0 || maxThickness < diameter
     ? 0
     : 1 + Math.floor((maxThickness - diameter) / verticalPitch);
@@ -131,6 +133,12 @@ export function formatInteger(value) {
   return isFiniteNumber(value) ? String(Math.trunc(value)) : "—";
 }
 
+export function buildWarningStatus(warning) {
+  return warning === NORMAL
+    ? { text: NORMAL, tone: "success" }
+    : { text: warning, tone: "warning" };
+}
+
 export function buildPackingPreviewGeometry({
   diameter,
   layers,
@@ -139,10 +147,30 @@ export function buildPackingPreviewGeometry({
   maxLayers = 24,
   maxRoots = 32,
 }) {
-  const safeDiameter = isFiniteNumber(diameter) && diameter > 0 ? diameter : 1;
+  const appearance = {
+    wireFill: "var(--color-surface)",
+    wireStroke: "var(--color-graphic)",
+    wireStrokeWidth: 2,
+    boundaryStroke: "var(--color-ink)",
+    boundaryStrokeWidth: 2,
+  };
+  if (!isFiniteNumber(diameter) || diameter <= 0) {
+    return {
+      ...appearance,
+      drawable: false,
+      emptyMessage: "线径为 0，暂无可绘制预览。",
+      circles: [],
+      width: 0,
+      height: 0,
+      bottomBoundaryY: 0,
+      viewBox: [0, 0, 1, 1],
+      truncated: false,
+    };
+  }
+  const safeDiameter = PREVIEW_DIAMETER;
   const safeLayers = Math.max(0, Math.min(Number.isSafeInteger(layers) ? layers : 0, maxLayers));
   const safeRoots = Math.max(0, Math.min(Number.isSafeInteger(roots) ? roots : 0, maxRoots));
-  const verticalPitch = safeDiameter * Math.sqrt(3) / 2;
+  const verticalPitch = safeDiameter * VERTICAL_PITCH_FACTOR;
   const circles = Array.from({ length: safeLayers }, (_, row) => {
     const count = mode === PACKING_MODES.BOUNDARY && row % 2 === 1
       ? Math.max(safeRoots - 1, 0)
@@ -158,12 +186,24 @@ export function buildPackingPreviewGeometry({
   const height = safeLayers > 0
     ? safeDiameter + (safeLayers - 1) * verticalPitch
     : 0;
+  const padding = safeDiameter * 0.4;
+  const viewBox = [
+    -padding,
+    -padding,
+    Math.max(width, safeDiameter) + 2 * padding,
+    Math.max(height, safeDiameter) + 2 * padding,
+  ];
+  const drawable = safeLayers > 0 && safeRoots > 0;
 
   return {
+    ...appearance,
+    drawable,
+    emptyMessage: drawable ? "" : "当前尺寸无法排下漆包线，暂无可绘制预览。",
     circles,
     width,
     height,
     bottomBoundaryY: height,
+    viewBox,
     truncated: safeLayers !== layers || safeRoots !== roots,
   };
 }

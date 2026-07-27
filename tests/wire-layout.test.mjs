@@ -130,9 +130,75 @@ test("builds preview bottom boundary tangent to the final wire row", () => {
     roots: 2,
     mode: PACKING_MODES.SAME,
   });
-  near(preview.height, 1.8660254037844386, "preview height");
+  near(preview.height, 59.712812921102035, "normalized preview height");
   assert.equal(preview.bottomBoundaryY, preview.height);
   assert.equal(Math.max(...preview.circles.map((circle) => circle.cy + circle.r)), preview.height);
+});
+
+test("normalizes preview coordinates for maximum finite engineering inputs", () => {
+  const dimensions = calculateLayerDimensions({
+    diameter: Number.MAX_VALUE,
+    layers: 1,
+    roots: 1,
+    mode: PACKING_MODES.SAME,
+  });
+  const capacity = calculateCapacity({
+    diameter: Number.MAX_VALUE,
+    maxWidth: Number.MAX_VALUE,
+    maxThickness: Number.MAX_VALUE,
+    mode: PACKING_MODES.SAME,
+  });
+  assert.equal(dimensions.valid, true);
+  assert.equal(capacity.valid, true);
+
+  for (const preview of [
+    wireLayoutModule.buildPackingPreviewGeometry({ diameter: Number.MAX_VALUE, layers: 1, roots: 1, mode: PACKING_MODES.SAME }),
+    wireLayoutModule.buildPackingPreviewGeometry({ diameter: Number.MAX_VALUE, layers: capacity.result.layers, roots: capacity.result.roots, mode: PACKING_MODES.SAME }),
+  ]) {
+    assert.equal(preview.drawable, true);
+    assert.ok(preview.viewBox.every(Number.isFinite));
+    assert.ok(preview.circles.flatMap(Object.values).every(Number.isFinite));
+    assert.equal(JSON.stringify(preview).includes("Infinity"), false);
+  }
+});
+
+test("returns an explicit empty preview for zero diameter", () => {
+  const preview = wireLayoutModule.buildPackingPreviewGeometry({
+    diameter: 0,
+    layers: 2,
+    roots: 3,
+    mode: PACKING_MODES.SAME,
+  });
+  assert.equal(preview.drawable, false);
+  assert.deepEqual(preview.circles, []);
+  assert.equal(preview.emptyMessage, "线径为 0，暂无可绘制预览。");
+  assert.equal(JSON.stringify(preview).includes("Infinity"), false);
+});
+
+test("exposes preview renderer contract for outlined wires and clear tangent boundaries", () => {
+  const preview = wireLayoutModule.buildPackingPreviewGeometry({
+    diameter: 1,
+    layers: 2,
+    roots: 2,
+    mode: PACKING_MODES.SAME,
+  });
+  assert.equal(preview.wireFill, "var(--color-surface)");
+  assert.equal(preview.wireStroke, "var(--color-graphic)");
+  assert.equal(preview.boundaryStroke, "var(--color-ink)");
+  assert.equal(preview.boundaryStrokeWidth, 2);
+  assert.equal(preview.bottomBoundaryY, preview.height);
+});
+
+test("maps every Excel warning to an always-visible status", () => {
+  assert.equal(typeof wireLayoutModule.buildWarningStatus, "function");
+  assert.deepEqual(wireLayoutModule.buildWarningStatus("正常"), {
+    text: "正常",
+    tone: "success",
+  });
+  assert.deepEqual(wireLayoutModule.buildWarningStatus("注意：测试警告。"), {
+    text: "注意：测试警告。",
+    tone: "warning",
+  });
 });
 
 test("distinguishes empty required values from invalid numeric values", () => {
