@@ -42,6 +42,7 @@ test("uses a concise homepage with a responsive three-state tool rail", () => {
   assert.match(homeCssSource, /--home-bg:\s*#f2f0ec/);
   assert.match(homeCssSource, /--home-accent:\s*#775b3e/);
   assert.match(homeCssSource, /--home-ease-out:\s*cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
+  assert.match(homeCssSource, /\.hero h1\s*\{[^}]*color:\s*var\(--home-ink\)/);
   assert.match(homeCssSource, /grid-template-columns 420ms var\(--home-ease-out\)/);
   assert.match(homeCssSource, /opacity 260ms var\(--home-ease-out\)/);
   assert.doesNotMatch(homeCssSource, /650ms/);
