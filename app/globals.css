@@ -69,13 +69,14 @@ a { color: inherit; }
 
 .skip-link { position: fixed; z-index: 100; top: 8px; left: 8px; transform: translateY(-160%); border-radius: var(--radius-sm); background: var(--ink); color: var(--paper); padding: 10px 14px; text-decoration: none; }
 .skip-link:focus { transform: translateY(0); }
-.site-header { position: relative; z-index: 20; border-bottom: 1px solid var(--line); background: rgb(251 252 248 / 94%); }
+.site-header { position: sticky; z-index: 20; top: 0; border-bottom: 1px solid rgb(203 211 214 / 72%); background: rgb(251 252 248 / 78%); box-shadow: 0 8px 24px rgb(19 44 64 / 5%); backdrop-filter: blur(18px) saturate(180%); }
 .site-header__inner { display: flex; width: min(100% - 48px, 1280px); min-height: 68px; margin: 0 auto; align-items: center; justify-content: space-between; gap: 28px; }
 .site-brand { display: inline-flex; flex: none; align-items: center; gap: 12px; color: var(--ink); font-weight: 800; text-decoration: none; }
 .site-brand__mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: var(--radius-sm); background: var(--brand); color: var(--paper); font-family: var(--font-mono); font-size: 13px; letter-spacing: .06em; }
 .site-nav { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 6px; }
-.site-nav a { min-height: 44px; border-radius: var(--radius-md); padding: 12px 10px; color: var(--muted); font-size: 14px; font-weight: 650; text-decoration: none; white-space: nowrap; }
-.site-nav a:hover { background: #eceee9; color: var(--ink); }
+.site-nav a { min-height: 44px; border-radius: var(--radius-md); padding: 12px 10px; color: var(--muted); font-size: 14px; font-weight: 650; text-decoration: none; transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; white-space: nowrap; }
+.site-nav a:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .site-nav a:hover { background: #eceee9; color: var(--ink); } }
 .site-footer { display: flex; width: min(100% - 48px, 1280px); margin: 32px auto 0; justify-content: space-between; gap: 24px; border-top: 1px solid var(--line); padding: 24px 0 32px; color: var(--muted); font-size: 14px; }
 .site-footer p { margin: 0; }
 

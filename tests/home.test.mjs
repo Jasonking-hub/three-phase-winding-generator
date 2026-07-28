@@ -6,6 +6,7 @@ import { TOOL_REGISTRY } from "../app/tools.js";
 const homePageSource = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const railSource = readFileSync(new URL("../app/HomeToolRail.tsx", import.meta.url), "utf8");
 const homeCssSource = readFileSync(new URL("../app/home.module.css", import.meta.url), "utf8");
+const globalCssSource = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
 test("publishes complete, ordered, uniquely routed home tools", () => {
   assert.deepEqual(
@@ -27,13 +28,19 @@ test("publishes complete, ordered, uniquely routed home tools", () => {
   assert.equal(new Set(TOOL_REGISTRY.map(({ href }) => href)).size, TOOL_REGISTRY.length);
 });
 
-test("uses a full-width three-state grid rail with reduced-motion fallback", () => {
+test("uses a concise homepage with a responsive three-state tool rail", () => {
   assert.doesNotMatch(homePageSource, /heroCopy/);
   assert.match(homePageSource, /<h1 id="home-title">中欣工具箱<\/h1>/);
+  assert.doesNotMatch(homePageSource, /槽极配、漆包线排线与线圈电阻，一处进入。/);
+  assert.doesNotMatch(homePageSource, /持续扩展/);
+  assert.doesNotMatch(homePageSource, /后续将围绕电机设计与制造中的常用计算持续补充工具。/);
   assert.match(railSource, /data-active-id=\{activeId\}/);
   assert.match(homeCssSource, /grid-template-columns:\s*2\.2fr 1fr 1fr/);
-  assert.match(homeCssSource, /650ms cubic-bezier\(0\.16, 1, 0\.3, 1\)/);
+  assert.match(homeCssSource, /--home-ease-out:\s*cubic-bezier\(0\.23, 1, 0\.32, 1\)/);
+  assert.match(homeCssSource, /220ms var\(--home-ease-out\)/);
+  assert.doesNotMatch(homeCssSource, /650ms/);
   assert.match(homeCssSource, /prefers-reduced-motion:\s*reduce/);
+  assert.match(globalCssSource, /\.site-header\s*\{[\s\S]*?backdrop-filter:\s*blur\(18px\) saturate\(180%\)/);
 });
 
 test("keeps all rail states, content layers, and mobile fallback accessible", () => {
@@ -44,7 +51,7 @@ test("keeps all rail states, content layers, and mobile fallback accessible", ()
   assert.match(homeCssSource, /\.toolRail\[data-active-id="coil-resistance"\]\s*\{\s*grid-template-columns:\s*1fr 1fr 2\.2fr/);
   assert.match(homeCssSource, /@media \(max-width: 1023px\) \{[\s\S]*?\.toolRail\[data-active-id="wire-layout"\],[\s\S]*?\.toolRail\[data-active-id="coil-resistance"\]\s*\{\s*grid-template-columns:\s*1fr/);
   assert.match(homeCssSource, /\.toolFullContent\s*\{[\s\S]*?opacity:\s*1;[\s\S]*?transform:\s*translateY\(0\)/);
-  assert.match(homeCssSource, /\.toolCard:not\(\[data-active="true"\]\) \.toolFullContent\s*\{\s*opacity:\s*0;\s*transform:\s*translateY\(6px\)/);
+  assert.match(homeCssSource, /\.toolCard:not\(\[data-active="true"\]\) \.toolFullContent\s*\{\s*opacity:\s*0;\s*transform:\s*translateY\(4px\)/);
   assert.match(homeCssSource, /\.toolCard:not\(\[data-active="true"\]\) \.toolCompactTitle\s*\{\s*opacity:\s*1;\s*transform:\s*translateY\(0\)/);
   assert.doesNotMatch(homeCssSource, /\.kicker,/);
   assert.match(homeCssSource, /\.toolCard\s*\{\s*min-height:\s*144px;\s*display:\s*grid;/);
