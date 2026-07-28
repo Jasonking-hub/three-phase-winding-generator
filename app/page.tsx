@@ -9,11 +9,9 @@ export default function HomePage() {
         <section className={styles.hero} aria-labelledby="home-title">
           <header className={styles.homeHeading}>
             <h1 id="home-title">中欣工具箱</h1>
+            <p className={styles.heroSubtitle}>工程计算，不必复杂</p>
           </header>
           <HomeToolRail />
-        </section>
-        <section className={styles.moreTools} aria-labelledby="more-tools-title">
-          <h2 id="more-tools-title">更多工具</h2>
         </section>
       </main>
       <script

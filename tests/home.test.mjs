@@ -31,6 +31,9 @@ test("publishes complete, ordered, uniquely routed home tools", () => {
 test("uses a concise homepage with a responsive three-state tool rail", () => {
   assert.doesNotMatch(homePageSource, /heroCopy/);
   assert.match(homePageSource, /<h1 id="home-title">中欣工具箱<\/h1>/);
+  assert.match(homePageSource, /<p className=\{styles\.heroSubtitle\}>工程计算，不必复杂<\/p>/);
+  assert.doesNotMatch(homePageSource, /moreTools/);
+  assert.doesNotMatch(homePageSource, /更多工具/);
   assert.doesNotMatch(homePageSource, /槽极配、漆包线排线与线圈电阻，一处进入。/);
   assert.doesNotMatch(homePageSource, /持续扩展/);
   assert.doesNotMatch(homePageSource, /后续将围绕电机设计与制造中的常用计算持续补充工具。/);
