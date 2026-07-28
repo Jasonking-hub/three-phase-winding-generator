@@ -31,7 +31,8 @@ test("static export exposes the toolbox home and all three calculators", async (
   assert.match(home, /href="\/slot-pole"/);
   assert.match(home, /href="\/wire-layout"/);
   assert.match(home, /href="\/coil-resistance"/);
-  assert.match(home, /更多工具/);
+  assert.match(home, /工程计算，不必复杂/);
+  assert.doesNotMatch(home, /更多工具/);
   assert.equal(home.match(/"@type":"WebSite"/g)?.length, 1);
 
   assert.match(slotPole, /槽极配生成器/);

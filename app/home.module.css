@@ -1,25 +1,29 @@
 .homePage {
-  --home-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --home-bg: #f2f0ec;
+  --home-surface: #fbfaf7;
+  --home-surface-muted: #e8e4de;
+  --home-ink: #282624;
+  --home-muted: #716d67;
+  --home-accent: #775b3e;
+  --home-line: rgb(72 65 57 / 14%);
+  --home-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   width: min(100% - 32px, 1280px);
   margin: 0 auto;
-  padding: 72px 0 56px;
-  color: var(--color-ink, #132c40);
+  padding: 76px 0 72px;
+  color: var(--home-ink);
 }
 
 .hero {
   display: grid;
-  gap: 24px;
-}
-
-.toolSection,
-.moreTools {
-  border: 1px solid var(--color-line, #cbd3d6);
-  background: var(--color-surface, #fbfcf8);
-  border-radius: 18px;
+  gap: 40px;
 }
 
 .homeHeading {
-  padding: 8px 0 4px;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 10px 24px 0;
+  text-align: center;
 }
 
 .toolIndex {
@@ -32,39 +36,41 @@
   line-height: 1.4;
 }
 
-.hero h1,
-.moreTools h2 {
+.hero h1 {
   margin: 0;
   font-family: var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif);
 }
 
 .hero h1 {
-  font-size: clamp(2.5rem, 5vw, 3.5rem);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.05;
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  font-weight: 760;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.heroSubtitle {
+  margin: 0;
+  color: var(--home-muted);
+  font-size: clamp(1rem, 1.7vw, 1.125rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.6;
 }
 
 .toolSection {
-  padding: 24px;
-  border-color: rgb(203 211 214 / 82%);
-  box-shadow: 0 14px 36px rgb(19 44 64 / 8%);
-}
-
-.moreTools h2 {
-  margin-top: 8px;
-  font-size: 2rem;
-  font-weight: 750;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  padding: 14px;
+  border: 1px solid rgb(255 255 255 / 66%);
+  border-radius: 24px;
+  background: rgb(251 250 247 / 44%);
+  box-shadow: 0 24px 64px rgb(66 57 48 / 8%);
 }
 
 .toolRail {
   display: grid;
   grid-template-columns: 2.2fr 1fr 1fr;
-  min-height: 320px;
-  gap: 8px;
-  transition: grid-template-columns 220ms var(--home-ease-out);
+  min-height: 336px;
+  gap: 10px;
+  transition: grid-template-columns 420ms var(--home-ease-out);
 }
 
 .toolRail[data-active-id="wire-layout"] {
@@ -80,20 +86,26 @@
   min-width: 0;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px;
+  padding: 18px;
   overflow: hidden;
-  border: 1px solid var(--color-line, #cbd3d6);
-  border-radius: 12px;
-  background: var(--color-surface, #fbfcf8);
-  color: var(--color-ink, #132c40);
+  border: 1px solid var(--home-line);
+  border-radius: 16px;
+  background: var(--home-surface-muted);
+  color: var(--home-ink);
   text-decoration: none;
-  transition: transform 220ms var(--home-ease-out), background-color 220ms var(--home-ease-out), color 220ms var(--home-ease-out), box-shadow 220ms var(--home-ease-out);
+  transition:
+    transform 180ms var(--home-ease-out),
+    background-color 300ms var(--home-ease-out),
+    border-color 300ms var(--home-ease-out),
+    color 300ms var(--home-ease-out),
+    box-shadow 300ms var(--home-ease-out);
 }
 
 .toolCard[data-active="true"] {
-  background: var(--color-ink, #132c40);
-  color: var(--color-surface, #fbfcf8);
-  box-shadow: var(--shadow-active, 0 20px 42px rgba(19, 44, 64, 0.18));
+  border-color: rgb(255 255 255 / 90%);
+  background: var(--home-surface);
+  color: var(--home-ink);
+  box-shadow: 0 20px 48px rgb(66 57 48 / 14%), inset 0 1px 0 rgb(255 255 255 / 88%);
 }
 
 .toolCard:hover,
@@ -102,17 +114,17 @@
 }
 
 .toolCard:focus-visible {
-  outline: 2px solid var(--color-brand, #a9461c);
+  outline: 2px solid var(--home-accent);
   outline-offset: 3px;
 }
 
 .toolCard:active {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(0) scale(0.98);
 }
 
 .toolIndex {
-  color: inherit;
-  opacity: 0.72;
+  color: var(--home-accent);
+  opacity: 0.78;
 }
 
 .toolFullContent {
@@ -120,7 +132,7 @@
   gap: 8px;
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 180ms var(--home-ease-out), transform 180ms var(--home-ease-out);
+  transition: opacity 260ms var(--home-ease-out), transform 260ms var(--home-ease-out);
 }
 
 .toolFullContent strong {
@@ -129,10 +141,10 @@
 }
 
 .toolFullContent span {
-  color: inherit;
   font-size: 0.875rem;
   line-height: 1.55;
-  opacity: 0.76;
+  color: var(--home-muted);
+  opacity: 1;
 }
 
 .toolCompactTitle {
@@ -142,7 +154,7 @@
   line-height: 1.3;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 180ms var(--home-ease-out), transform 180ms var(--home-ease-out);
+  transition: opacity 260ms var(--home-ease-out), transform 260ms var(--home-ease-out);
 }
 
 .toolCard:not([data-active="true"]) .toolFullContent {
@@ -158,7 +170,7 @@
 .slotPoleVisual,
 .resistanceVisual {
   font-family: var(--font-mono, "Cascadia Mono", Consolas, monospace);
-  color: var(--color-graphic, #c85f28);
+  color: var(--home-accent);
 }
 
 .slotPoleVisual {
@@ -177,13 +189,13 @@
 }
 
 .wireCircles {
-  fill: var(--color-surface, #fbfcf8);
-  stroke: var(--color-graphic, #c85f28);
+  fill: var(--home-surface);
+  stroke: var(--home-accent);
   stroke-width: 1.5;
 }
 
 .wireBoundary {
-  stroke: var(--color-line, #cbd3d6);
+  stroke: rgb(72 65 57 / 30%);
   stroke-width: 2;
 }
 
@@ -209,13 +221,6 @@
 .resistanceVisual small b {
   border-top: 1px solid currentColor;
   font-weight: 650;
-}
-
-.moreTools {
-  margin-top: 40px;
-  padding: 32px;
-  border-color: rgb(203 211 214 / 82%);
-  box-shadow: 0 10px 28px rgb(19 44 64 / 4%);
 }
 
 @media (max-width: 1023px) {
@@ -254,12 +259,12 @@
     padding-top: 32px;
   }
 
-  .toolSection,
-  .moreTools {
-    padding: 24px;
+  .toolSection {
+    padding: 10px;
   }
 
   .toolCard {
+    padding: 16px;
     grid-template-columns: auto 94px minmax(0, 1fr);
     gap: 12px;
   }

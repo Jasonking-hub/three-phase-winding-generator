@@ -39,11 +39,17 @@ test("uses a concise homepage with a responsive three-state tool rail", () => {
   assert.doesNotMatch(homePageSource, /后续将围绕电机设计与制造中的常用计算持续补充工具。/);
   assert.match(railSource, /data-active-id=\{activeId\}/);
   assert.match(homeCssSource, /grid-template-columns:\s*2\.2fr 1fr 1fr/);
-  assert.match(homeCssSource, /--home-ease-out:\s*cubic-bezier\(0\.23, 1, 0\.32, 1\)/);
-  assert.match(homeCssSource, /220ms var\(--home-ease-out\)/);
+  assert.match(homeCssSource, /--home-bg:\s*#f2f0ec/);
+  assert.match(homeCssSource, /--home-accent:\s*#775b3e/);
+  assert.match(homeCssSource, /--home-ease-out:\s*cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
+  assert.match(homeCssSource, /grid-template-columns 420ms var\(--home-ease-out\)/);
+  assert.match(homeCssSource, /opacity 260ms var\(--home-ease-out\)/);
   assert.doesNotMatch(homeCssSource, /650ms/);
+  assert.doesNotMatch(homeCssSource, /background:\s*var\(--color-ink/);
   assert.match(homeCssSource, /prefers-reduced-motion:\s*reduce/);
-  assert.match(globalCssSource, /\.site-header\s*\{[\s\S]*?backdrop-filter:\s*blur\(18px\) saturate\(180%\)/);
+  assert.match(globalCssSource, /\.site-header\s*\{[\s\S]*?backdrop-filter:\s*blur\(18px\) saturate\(150%\)/);
+  assert.match(globalCssSource, /prefers-reduced-transparency:\s*reduce/);
+  assert.match(globalCssSource, /prefers-contrast:\s*more/);
 });
 
 test("keeps all rail states, content layers, and mobile fallback accessible", () => {
