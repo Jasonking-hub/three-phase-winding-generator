@@ -60,8 +60,22 @@ test("static export exposes the toolbox home and all three calculators", async (
   assert.match(wireLayout, /id="layer-diameter"[^>]*value="0\.87"/);
   assert.match(wireLayout, /id="capacity-diameter"[^>]*value="0\.62"/);
   assert.match(coilResistance, /<label[^>]*for="round-wireDiameter"[^>]*>裸线径 d<\/label>/);
-  assert.match(coilResistance, /id="round-wireDiameter"[^>]*value=""/);
-  assert.match(coilResistance, /id="motor-wireDiameter"[^>]*value=""/);
+  for (const id of [
+    "round-wireDiameter",
+    "round-outerDiameter",
+    "round-innerDiameter",
+    "round-turns",
+    "motor-wireDiameter",
+    "motor-outerLength",
+    "motor-outerWidth",
+    "motor-innerLength",
+    "motor-innerWidth",
+    "motor-turns",
+    "motor-branchesPerPhase",
+    "motor-coilsPerBranch",
+  ]) {
+    assert.match(coilResistance, new RegExp(`<input[^>]*id="${id}"[^>]*value=""`));
+  }
   assert.match(coilResistance, /<select[^>]*id="round-material"/);
   assert.match(coilResistance, /<select[^>]*id="motor-material"/);
   assert.equal(

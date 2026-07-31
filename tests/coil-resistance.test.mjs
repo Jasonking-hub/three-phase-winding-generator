@@ -162,14 +162,17 @@ test('calculators reject unsupported materials', () => {
   assert.equal(calculation.result, null);
 });
 
-test('calculator renders independent material controls and weight results', () => {
-  assert.match(calculatorSource, /id="round-material"/);
-  assert.match(calculatorSource, /id="motor-material"/);
+test('calculator keeps round and motor form state independent', () => {
+  assert.match(calculatorSource, /<MaterialField id="round-material" value={roundValues\.material} onChange=\{\(value\) => update\(setRoundValues, setRoundTouched, "material", value\)\} \/>/);
+  assert.match(calculatorSource, /<MaterialField id="motor-material" value={motorValues\.material} onChange=\{\(value\) => update\(setMotorValues, setMotorTouched, "material", value\)\} \/>/);
+  assert.match(calculatorSource, /roundFields\.map\(\(\[name, label, unit\]\) => <Field key=\{name\} id=\{`round-\$\{name\}`\} label=\{label\} unit=\{unit\} value=\{roundValues\[name\]\} error=\{roundTouched \? round\.errors\[name\] : undefined\}/);
+  assert.match(calculatorSource, /motorFields\.map\(\(\[name, label, unit\]\) => <Field key=\{name\} id=\{`motor-\$\{name\}`\} label=\{label\} unit=\{unit\} value=\{motorValues\[name\]\} error=\{motorTouched \? motor\.errors\[name\] : undefined\}/);
+});
+
+test('calculator renders weight results after valid input', () => {
   assert.match(calculatorSource, /formatWeight\(round\.result\.coilWeight\)/);
   assert.match(calculatorSource, /formatWeight\(motor\.result\.coilWeight\)/);
   assert.match(calculatorSource, /formatWeight\(motor\.result\.totalWeight\)/);
   assert.match(calculatorSource, /整台三相电机线圈重量/);
-  assert.match(calculatorSource, /!roundTouched/);
-  assert.match(calculatorSource, /!motorTouched/);
   assert.doesNotMatch(calculatorSource, /铜线电阻率/);
 });
