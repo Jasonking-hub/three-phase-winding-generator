@@ -6,31 +6,42 @@ import {
   calculateRoundCoil,
   formatLength,
   formatResistance,
+  formatWeight,
 } from '../app/coil-resistance/coil-resistance.js';
 
 function assertClose(actual, expected, tolerance = 1e-12) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `expected ${actual} to be within ${tolerance} of ${expected}`);
 }
 
+const ROUND_SAMPLE = {
+  material: 'copper',
+  wireDiameter: 0.61,
+  outerDiameter: 71.8,
+  innerDiameter: 65.2,
+  turns: 228,
+};
+
+const MOTOR_SAMPLE = {
+  material: 'copper',
+  wireDiameter: 0.8,
+  outerLength: 158,
+  outerWidth: 23.5,
+  innerLength: 140,
+  innerWidth: 5.5,
+  turns: 44,
+  branchesPerPhase: 1,
+  coilsPerBranch: 1,
+};
+
 test('calculateRoundCoil matches Excel default resistance', () => {
-  const calculation = calculateRoundCoil({
-    wireDiameter: 0.61,
-    outerDiameter: 71.8,
-    innerDiameter: 65.2,
-    turns: 228,
-  });
+  const calculation = calculateRoundCoil(ROUND_SAMPLE);
 
   assert.equal(calculation.valid, true);
   assertClose(calculation.result.resistance, 2.8944296694436975);
 });
 
 test('calculateRoundCoil returns all Excel intermediates', () => {
-  const { result } = calculateRoundCoil({
-    wireDiameter: 0.61,
-    outerDiameter: 71.8,
-    innerDiameter: 65.2,
-    turns: 228,
-  });
+  const { result } = calculateRoundCoil(ROUND_SAMPLE);
 
   assertClose(result.area, 0.292246656545325);
   assertClose(result.outerTurnLength, 225.5663524854, 1e-9);
@@ -40,17 +51,7 @@ test('calculateRoundCoil returns all Excel intermediates', () => {
 });
 
 test('calculateMotorCoil matches Excel default values', () => {
-  const calculation = calculateMotorCoil({
-    wireDiameter: 0.8,
-    outerLength: 158,
-    outerWidth: 23.5,
-    innerLength: 140,
-    innerWidth: 5.5,
-    turns: 44,
-    resistivity: 17.24,
-    branchesPerPhase: 1,
-    coilsPerBranch: 1,
-  });
+  const calculation = calculateMotorCoil(MOTOR_SAMPLE);
 
   assert.equal(calculation.valid, true);
   assertClose(calculation.result.area, 0.50265482456);
@@ -65,19 +66,20 @@ test('calculateMotorCoil matches Excel default values', () => {
 
 test('calculators reject zero, non-finite, and non-integer count inputs', () => {
   const round = calculateRoundCoil({
+    material: 'copper',
     wireDiameter: 0,
     outerDiameter: Infinity,
     innerDiameter: 65.2,
     turns: 2.5,
   });
   const motor = calculateMotorCoil({
+    material: 'copper',
     wireDiameter: 0.8,
     outerLength: 158,
     outerWidth: 23.5,
     innerLength: 140,
     innerWidth: 5.5,
     turns: 44.5,
-    resistivity: Number.NaN,
     branchesPerPhase: 0,
     coilsPerBranch: 1.5,
   });
@@ -86,12 +88,13 @@ test('calculators reject zero, non-finite, and non-integer count inputs', () => 
   assert.deepEqual(Object.keys(round.errors).sort(), ['outerDiameter', 'turns', 'wireDiameter']);
   assert.equal(round.result, null);
   assert.equal(motor.valid, false);
-  assert.deepEqual(Object.keys(motor.errors).sort(), ['branchesPerPhase', 'coilsPerBranch', 'resistivity', 'turns']);
+  assert.deepEqual(Object.keys(motor.errors).sort(), ['branchesPerPhase', 'coilsPerBranch', 'turns']);
   assert.equal(motor.result, null);
 });
 
 test('round calculation preserves Excel average formula when outer is below inner', () => {
   const lowerOuter = calculateRoundCoil({
+    material: 'copper',
     wireDiameter: 1,
     outerDiameter: 10,
     innerDiameter: 20,
@@ -105,6 +108,50 @@ test('round calculation preserves Excel average formula when outer is below inne
 test('formatters use required precision and hide invalid values', () => {
   assert.equal(formatLength(12), '12.000');
   assert.equal(formatResistance(12), '12.000000');
+  assert.equal(formatWeight(0.19440147191187823), '0.194401');
   assert.equal(formatLength(Number.NaN), '—');
   assert.equal(formatResistance(Infinity), '—');
+  assert.equal(formatWeight(Number.NaN), '—');
+});
+
+test('round coil uses selected material for resistance and weight', () => {
+  const copper = calculateRoundCoil(ROUND_SAMPLE);
+  const aluminum = calculateRoundCoil({ ...ROUND_SAMPLE, material: 'aluminum' });
+
+  assertClose(copper.result.resistance, 2.8944296694436975);
+  assertClose(copper.result.coilWeight, 0.12847920838611958);
+  assertClose(aluminum.result.resistance, 4.628737006181134);
+  assertClose(aluminum.result.coilWeight, 0.038715832884210144);
+});
+
+test('motor coil returns single-coil and three-phase total weight', () => {
+  const copper = calculateMotorCoil(MOTOR_SAMPLE);
+  const aluminum = calculateMotorCoil({ ...MOTOR_SAMPLE, material: 'aluminum' });
+
+  assertClose(copper.result.coilResistance, 0.4934780447340384);
+  assertClose(copper.result.coilWeight, 0.06480049063729275);
+  assertClose(copper.result.totalWeight, 0.19440147191187823);
+  assertClose(aluminum.result.coilResistance, 0.7891641353432389);
+  assertClose(aluminum.result.coilWeight, 0.019526933562577057);
+  assertClose(aluminum.result.totalWeight, 0.05858080068773117);
+});
+
+test('motor total weight multiplies branches, coils per branch, and three phases', () => {
+  const calculation = calculateMotorCoil({
+    ...MOTOR_SAMPLE,
+    branchesPerPhase: 2,
+    coilsPerBranch: 4,
+  });
+
+  assertClose(calculation.result.totalWeight, 1.5552117752950259);
+  assertClose(calculation.result.phaseResistance, 0.9869560894680768);
+  assertClose(calculation.result.lineToLineResistance, 1.9739121789361536);
+});
+
+test('calculators reject unsupported materials', () => {
+  const calculation = calculateRoundCoil({ ...ROUND_SAMPLE, material: 'steel' });
+
+  assert.equal(calculation.valid, false);
+  assert.deepEqual(calculation.errors, { material: '请选择有效材料。' });
+  assert.equal(calculation.result, null);
 });
