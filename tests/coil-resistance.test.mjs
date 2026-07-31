@@ -15,6 +15,7 @@ import {
   buildMotorExportRows,
   buildRoundExportRows,
   exportCoilCalculation,
+  isExportableCoilCalculation,
 } from '../app/coil-resistance/coil-export.js';
 import { createCoilWorkbook } from '../app/coil-resistance/coil-workbook.js';
 
@@ -70,19 +71,35 @@ test('round export includes every input, material constant, and result as typed 
   ]);
 });
 
-test('motor export includes branch counts and all resistance and weight results', () => {
+test('motor export includes every input, material constant, and result as typed rows', () => {
   const calculation = calculateMotorCoil(MOTOR_SAMPLE);
   const rows = buildMotorExportRows(MOTOR_SAMPLE, calculation.result);
 
-  assert.equal(rows[0][0], '项目');
-  assert.deepEqual(rows.find(([label]) => label === '每相支路数'), ['每相支路数', 1, '支路']);
-  assert.deepEqual(rows.find(([label]) => label === '每支路线圈数'), ['每支路线圈数', 1, '线圈']);
-  assert.deepEqual(rows.find(([label]) => label === '整台三相电机线圈重量'), [
-    '整台三相电机线圈重量',
-    calculation.result.totalWeight,
-    'kg',
+  assert.deepEqual(rows, [
+    ['项目', '数值', '单位'],
+    ['线圈材料', '铜线', ''],
+    ['电阻率', 17.24, 'μΩ·mm'],
+    ['密度', 8.96e-6, 'kg/mm³'],
+    ['裸线径 d', 0.8, 'mm'],
+    ['最外圈长', 158, 'mm'],
+    ['最外圈宽', 23.5, 'mm'],
+    ['最内圈长', 140, 'mm'],
+    ['最内圈宽', 5.5, 'mm'],
+    ['匝数', 44, '匝'],
+    ['每相支路数', 1, '支路'],
+    ['每支路线圈数', 1, '线圈'],
+    ['截面积', calculation.result.area, 'mm²'],
+    ['最外圈单匝长度', calculation.result.outerTurnLength, 'mm'],
+    ['最内圈单匝长度', calculation.result.innerTurnLength, 'mm'],
+    ['平均单匝长度', calculation.result.averageTurnLength, 'mm'],
+    ['单线圈线材长度', calculation.result.length, 'mm'],
+    ['单线圈电阻', calculation.result.coilResistance, 'Ω'],
+    ['单相电阻', calculation.result.phaseResistance, 'Ω'],
+    ['P-P 电阻', calculation.result.lineToLineResistance, 'Ω'],
+    ['单线圈重量', calculation.result.coilWeight, 'kg'],
+    ['整台三相电机线圈重量', calculation.result.totalWeight, 'kg'],
   ]);
-  assert.equal(rows.length, 22);
+  rows.slice(2).forEach(([, value]) => assert.equal(typeof value, 'number'));
 });
 
 test('export filename uses a stable local timestamp', () => {
@@ -130,6 +147,36 @@ test('export orchestration blocks invalid calculations without loading workbook 
   assert.equal(loaded, false);
 });
 
+test('export orchestration blocks valid calculations with underflowed or overflowed results', async () => {
+  const underflowed = calculateRoundCoil({ ...ROUND_SAMPLE, wireDiameter: 1e-200 });
+  const overflowed = calculateMotorCoil({ ...MOTOR_SAMPLE, outerLength: Number.MAX_VALUE, outerWidth: Number.MAX_VALUE });
+
+  assert.equal(underflowed.valid, true);
+  assert.equal(overflowed.valid, true);
+  assert.equal(isExportableCoilCalculation(underflowed), false);
+  assert.equal(isExportableCoilCalculation(overflowed), false);
+
+  for (const [calculation, input, sheetName, buildRows] of [
+    [underflowed, { ...ROUND_SAMPLE, wireDiameter: 1e-200 }, '圆形线圈', buildRoundExportRows],
+    [overflowed, { ...MOTOR_SAMPLE, outerLength: Number.MAX_VALUE, outerWidth: Number.MAX_VALUE }, '矩形线圈', buildMotorExportRows],
+  ]) {
+    let loaded = false;
+    const error = await exportCoilCalculation({
+      calculation,
+      input,
+      sheetName,
+      buildRows,
+      loadWorkbook: async () => {
+        loaded = true;
+        return {};
+      },
+    });
+
+    assert.equal(error, '');
+    assert.equal(loaded, false);
+  }
+});
+
 test('export orchestration returns approved message when workbook loading fails', async () => {
   const calculation = calculateMotorCoil(MOTOR_SAMPLE);
   const error = await exportCoilCalculation({
@@ -138,6 +185,21 @@ test('export orchestration returns approved message when workbook loading fails'
     sheetName: '矩形线圈',
     buildRows: buildMotorExportRows,
     loadWorkbook: async () => { throw new Error('load failed'); },
+  });
+
+  assert.equal(error, 'Excel 导出失败，请重试。');
+});
+
+test('export orchestration returns approved message when workbook download fails', async () => {
+  const calculation = calculateMotorCoil(MOTOR_SAMPLE);
+  const error = await exportCoilCalculation({
+    calculation,
+    input: MOTOR_SAMPLE,
+    sheetName: '矩形线圈',
+    buildRows: buildMotorExportRows,
+    loadWorkbook: async () => ({
+      downloadCoilWorkbook: () => { throw new Error('download failed'); },
+    }),
   });
 
   assert.equal(error, 'Excel 导出失败，请重试。');
@@ -288,4 +350,9 @@ test('calculator renders weight results after valid input', () => {
   assert.match(calculatorSource, /formatWeight\(motor\.result\.totalWeight\)/);
   assert.match(calculatorSource, /整台三相电机线圈重量/);
   assert.doesNotMatch(calculatorSource, /铜线电阻率/);
+});
+
+test('calculator uses exportability guard for both export buttons', () => {
+  assert.match(calculatorSource, /disabled=\{!isExportableCoilCalculation\(round\)\}/);
+  assert.match(calculatorSource, /disabled=\{!isExportableCoilCalculation\(motor\)\}/);
 });

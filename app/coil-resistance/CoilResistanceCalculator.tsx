@@ -13,6 +13,7 @@ import {
   buildMotorExportRows,
   buildRoundExportRows,
   exportCoilCalculation,
+  isExportableCoilCalculation,
 } from "./coil-export.js";
 import styles from "./coil-resistance.module.css";
 
@@ -162,7 +163,7 @@ export default function CoilResistanceCalculator() {
         <section className={styles.resultPanel} aria-label="圆形线圈计算结果" aria-live="polite">
           <div className={styles.resultHeader}>
             <h2>计算结果</h2>
-            <button className={styles.exportButton} type="button" onClick={exportRound} disabled={!round.valid}>
+            <button className={styles.exportButton} type="button" onClick={exportRound} disabled={!isExportableCoilCalculation(round)}>
               导出 Excel
             </button>
           </div>
@@ -188,7 +189,7 @@ export default function CoilResistanceCalculator() {
         <section className={styles.resultPanel} aria-label="矩形线圈计算结果" aria-live="polite">
           <div className={styles.resultHeader}>
             <h2>计算结果</h2>
-            <button className={styles.exportButton} type="button" onClick={exportMotor} disabled={!motor.valid}>
+            <button className={styles.exportButton} type="button" onClick={exportMotor} disabled={!isExportableCoilCalculation(motor)}>
               导出 Excel
             </button>
           </div>

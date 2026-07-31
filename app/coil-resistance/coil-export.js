@@ -60,6 +60,12 @@ export function buildExportFilename(label, date = new Date()) {
   return `${label}计算结果_${stamp}.xlsx`;
 }
 
+export function isExportableCoilCalculation(calculation) {
+  return calculation.valid
+    && calculation.result
+    && Object.values(calculation.result).every(Number.isFinite);
+}
+
 export async function exportCoilCalculation({
   calculation,
   input,
@@ -68,7 +74,7 @@ export async function exportCoilCalculation({
   now = new Date(),
   loadWorkbook = () => import('./coil-workbook.js'),
 }) {
-  if (!calculation.valid || !calculation.result) return '';
+  if (!isExportableCoilCalculation(calculation)) return '';
   try {
     const { downloadCoilWorkbook } = await loadWorkbook();
     downloadCoilWorkbook(
