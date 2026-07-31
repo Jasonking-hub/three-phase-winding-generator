@@ -26,6 +26,9 @@ test("publishes complete, ordered, uniquely routed home tools", () => {
   }
 
   assert.equal(new Set(TOOL_REGISTRY.map(({ href }) => href)).size, TOOL_REGISTRY.length);
+
+  const coilTool = TOOL_REGISTRY.find(({ id }) => id === "coil-resistance");
+  assert.equal(coilTool.description, "计算圆形与矩形铜/铝线圈的电阻和重量。");
 });
 
 test("uses a concise homepage with a responsive three-state tool rail", () => {

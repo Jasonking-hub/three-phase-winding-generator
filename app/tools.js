@@ -20,7 +20,7 @@ export const TOOL_REGISTRY = [
     index: 3,
     name: "线圈电阻计算器",
     href: "/coil-resistance",
-    description: "计算圆形线圈与电机线圈的铜线电阻。",
+    description: "计算圆形与矩形铜/铝线圈的电阻和重量。",
     visual: "resistance",
   },
 ];

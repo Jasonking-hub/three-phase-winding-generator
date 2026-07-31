@@ -54,8 +54,8 @@ export const TOOL_SEO = {
   "coil-resistance": {
     name: "线圈电阻计算器",
     path: "/coil-resistance",
-    description: "按裸线径、线圈尺寸和匝数计算圆形线圈或电机线圈的铜线长度与电阻。",
-    keywords: ["线圈电阻", "电机线圈", "铜线电阻", "漆包线电阻"],
+    description: "按材料、裸线径、线圈尺寸和匝数计算铜线或铝线圆形及矩形线圈的电阻与重量。",
+    keywords: ["线圈电阻", "线圈重量", "铜线电阻", "铝线电阻", "电机线圈"],
   },
 };
 

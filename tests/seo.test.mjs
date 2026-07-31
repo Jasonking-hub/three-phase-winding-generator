@@ -31,6 +31,13 @@ test("describes the site and each calculator with structured SEO data", async ()
     assert.equal(schema["@type"], "WebApplication");
     assert.equal(new URL(schema.url).pathname, path);
   }
+
+  const coilMetadata = seo.createToolMetadata("coil-resistance");
+  assert.match(coilMetadata.description, /铜线/);
+  assert.match(coilMetadata.description, /铝线/);
+  assert.match(coilMetadata.description, /重量/);
+  assert.ok(coilMetadata.keywords.includes("线圈重量"));
+  assert.ok(coilMetadata.keywords.includes("铝线电阻"));
 });
 
 test("configures static output for Netlify hosting", async () => {
