@@ -246,24 +246,62 @@ git commit -m "feat: build coil Excel workbooks"
 - Consumes: `buildRoundExportRows`, `buildMotorExportRows`, `buildExportFilename`, and dynamically imported `downloadCoilWorkbook`.
 - Produces: two accessible export buttons, disabled-state behavior, automatic downloads, and isolated error messages.
 
-- [ ] **Step 1: Write failing UI wiring tests**
+- [ ] **Step 1: Write failing export-orchestration tests**
 
-Add source assertions:
+Add behavior tests for a new `exportCoilCalculation` function. The workbook loader is the browser/file boundary, so inject a deterministic test loader and assert the real orchestration result and complete download arguments:
 
 ```js
-test('calculator exposes independent lazy Excel exports for valid results', () => {
-  assert.match(calculatorSource, /await import\("\.\/coil-workbook\.js"\)/);
-  assert.match(calculatorSource, /downloadCoilWorkbook\("圆形线圈", buildRoundExportRows/);
-  assert.match(calculatorSource, /downloadCoilWorkbook\("矩形线圈", buildMotorExportRows/);
-  assert.match(calculatorSource, /disabled=\{!round\.valid\}/);
-  assert.match(calculatorSource, /disabled=\{!motor\.valid\}/);
-  assert.equal((calculatorSource.match(/导出 Excel/g) ?? []).length, 2);
+test('export orchestration downloads one valid calculation with exact workbook arguments', async () => {
+  const calculation = calculateRoundCoil(ROUND_SAMPLE);
+  const expectedRows = buildRoundExportRows(ROUND_SAMPLE, calculation.result);
+  let downloaded;
+  const error = await exportCoilCalculation({
+    calculation,
+    input: ROUND_SAMPLE,
+    sheetName: '圆形线圈',
+    buildRows: buildRoundExportRows,
+    now: new Date(2026, 6, 31, 10, 30, 0),
+    loadWorkbook: async () => ({
+      downloadCoilWorkbook: (...args) => { downloaded = args; },
+    }),
+  });
+
+  assert.equal(error, '');
+  assert.deepEqual(downloaded, [
+    '圆形线圈',
+    expectedRows,
+    '圆形线圈计算结果_20260731-103000.xlsx',
+  ]);
 });
 
-test('calculator keeps export failures isolated from calculation results', () => {
-  assert.match(calculatorSource, /Excel 导出失败，请重试。/);
-  assert.match(calculatorSource, /roundExportError/);
-  assert.match(calculatorSource, /motorExportError/);
+test('export orchestration blocks invalid calculations without loading workbook code', async () => {
+  let loaded = false;
+  const error = await exportCoilCalculation({
+    calculation: { valid: false, result: null },
+    input: ROUND_SAMPLE,
+    sheetName: '圆形线圈',
+    buildRows: buildRoundExportRows,
+    loadWorkbook: async () => {
+      loaded = true;
+      return {};
+    },
+  });
+
+  assert.equal(error, '');
+  assert.equal(loaded, false);
+});
+
+test('export orchestration returns the approved message when workbook loading fails', async () => {
+  const calculation = calculateMotorCoil(MOTOR_SAMPLE);
+  const error = await exportCoilCalculation({
+    calculation,
+    input: MOTOR_SAMPLE,
+    sheetName: '矩形线圈',
+    buildRows: buildMotorExportRows,
+    loadWorkbook: async () => { throw new Error('load failed'); },
+  });
+
+  assert.equal(error, 'Excel 导出失败，请重试。');
 });
 ```
 
@@ -275,50 +313,64 @@ Run:
 node --test tests/coil-resistance.test.mjs
 ```
 
-Expected: FAIL because export buttons and dynamic workbook import are absent.
+Expected: FAIL because `exportCoilCalculation` does not exist.
 
-- [ ] **Step 3: Add independent export handlers**
+- [ ] **Step 3: Add tested export orchestration and independent handlers**
+
+Add to `coil-export.js`:
+
+```js
+export async function exportCoilCalculation({
+  calculation,
+  input,
+  sheetName,
+  buildRows,
+  now = new Date(),
+  loadWorkbook = () => import('./coil-workbook.js'),
+}) {
+  if (!calculation.valid || !calculation.result) return '';
+  try {
+    const { downloadCoilWorkbook } = await loadWorkbook();
+    downloadCoilWorkbook(
+      sheetName,
+      buildRows(input, calculation.result),
+      buildExportFilename(sheetName, now),
+    );
+    return '';
+  } catch {
+    return 'Excel 导出失败，请重试。';
+  }
+}
+```
 
 Modify `CoilResistanceCalculator.tsx`:
 
 ```tsx
 import {
-  buildExportFilename,
   buildMotorExportRows,
   buildRoundExportRows,
+  exportCoilCalculation,
 } from "./coil-export.js";
 
 const [roundExportError, setRoundExportError] = useState("");
 const [motorExportError, setMotorExportError] = useState("");
 
 const exportRound = async () => {
-  if (!round.valid || !round.result) return;
-  setRoundExportError("");
-  try {
-    const { downloadCoilWorkbook } = await import("./coil-workbook.js");
-    downloadCoilWorkbook(
-      "圆形线圈",
-      buildRoundExportRows(parse(roundValues), round.result),
-      buildExportFilename("圆形线圈"),
-    );
-  } catch {
-    setRoundExportError("Excel 导出失败，请重试。");
-  }
+  setRoundExportError(await exportCoilCalculation({
+    calculation: round,
+    input: parse(roundValues),
+    sheetName: "圆形线圈",
+    buildRows: buildRoundExportRows,
+  }));
 };
 
 const exportMotor = async () => {
-  if (!motor.valid || !motor.result) return;
-  setMotorExportError("");
-  try {
-    const { downloadCoilWorkbook } = await import("./coil-workbook.js");
-    downloadCoilWorkbook(
-      "矩形线圈",
-      buildMotorExportRows(parse(motorValues), motor.result),
-      buildExportFilename("矩形线圈"),
-    );
-  } catch {
-    setMotorExportError("Excel 导出失败，请重试。");
-  }
+  setMotorExportError(await exportCoilCalculation({
+    calculation: motor,
+    input: parse(motorValues),
+    sheetName: "矩形线圈",
+    buildRows: buildMotorExportRows,
+  }));
 };
 ```
 
@@ -359,7 +411,18 @@ node --test tests/coil-resistance.test.mjs
 
 Expected: all coil-resistance tests PASS.
 
-- [ ] **Step 6: Commit Task 2**
+- [ ] **Step 6: Run browser E2E behavior verification**
+
+Using the built application in a real browser:
+
+- Confirm both buttons render disabled before valid input.
+- Enter valid round values and confirm only the round button enables.
+- Download the round workbook and inspect it as an XLSX: one `圆形线圈` sheet and all required rows.
+- Enter valid rectangular values and confirm its button enables.
+- Download the rectangular workbook and inspect it as an XLSX: one `矩形线圈` sheet and all required rows.
+- Confirm filenames end in `.xlsx` and follow the approved timestamp pattern.
+
+- [ ] **Step 7: Commit Task 2**
 
 ```powershell
 git add app/coil-resistance/CoilResistanceCalculator.tsx app/coil-resistance/coil-resistance.module.css tests/coil-resistance.test.mjs
