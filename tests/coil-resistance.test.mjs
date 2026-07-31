@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -8,6 +9,11 @@ import {
   formatResistance,
   formatWeight,
 } from '../app/coil-resistance/coil-resistance.js';
+
+const calculatorSource = readFileSync(
+  new URL('../app/coil-resistance/CoilResistanceCalculator.tsx', import.meta.url),
+  'utf8',
+);
 
 function assertClose(actual, expected, tolerance = 1e-12) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `expected ${actual} to be within ${tolerance} of ${expected}`);
@@ -154,4 +160,16 @@ test('calculators reject unsupported materials', () => {
   assert.equal(calculation.valid, false);
   assert.deepEqual(calculation.errors, { material: '请选择有效材料。' });
   assert.equal(calculation.result, null);
+});
+
+test('calculator renders independent material controls and weight results', () => {
+  assert.match(calculatorSource, /id="round-material"/);
+  assert.match(calculatorSource, /id="motor-material"/);
+  assert.match(calculatorSource, /formatWeight\(round\.result\.coilWeight\)/);
+  assert.match(calculatorSource, /formatWeight\(motor\.result\.coilWeight\)/);
+  assert.match(calculatorSource, /formatWeight\(motor\.result\.totalWeight\)/);
+  assert.match(calculatorSource, /整台三相电机线圈重量/);
+  assert.match(calculatorSource, /!roundTouched/);
+  assert.match(calculatorSource, /!motorTouched/);
+  assert.doesNotMatch(calculatorSource, /铜线电阻率/);
 });

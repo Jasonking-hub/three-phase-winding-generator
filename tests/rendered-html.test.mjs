@@ -38,6 +38,8 @@ test("static export exposes the toolbox home and all three calculators", async (
   assert.match(slotPole, /槽极配生成器/);
   assert.match(wireLayout, /漆包线排线计算器/);
   assert.match(coilResistance, /线圈电阻计算器/);
+  assert.match(coilResistance, /矩形线圈/);
+  assert.doesNotMatch(coilResistance, /计算假设/);
 
   for (const [html, title, route] of [
     [slotPole, "槽极配生成器｜中欣工具箱", "/slot-pole"],
@@ -58,8 +60,21 @@ test("static export exposes the toolbox home and all three calculators", async (
   assert.match(wireLayout, /id="layer-diameter"[^>]*value="0\.87"/);
   assert.match(wireLayout, /id="capacity-diameter"[^>]*value="0\.62"/);
   assert.match(coilResistance, /<label[^>]*for="round-wireDiameter"[^>]*>裸线径 d<\/label>/);
-  assert.match(coilResistance, /id="round-wireDiameter"[^>]*value="0\.61"/);
-  assert.match(coilResistance, /id="motor-wireDiameter"[^>]*value="0\.8"/);
+  assert.match(coilResistance, /id="round-wireDiameter"[^>]*value=""/);
+  assert.match(coilResistance, /id="motor-wireDiameter"[^>]*value=""/);
+  assert.match(coilResistance, /<select[^>]*id="round-material"/);
+  assert.match(coilResistance, /<select[^>]*id="motor-material"/);
+  assert.equal(
+    coilResistance.match(/<option value="copper" selected="">铜线<\/option>/g)?.length,
+    2,
+  );
+  assert.ok(
+    (coilResistance.match(/<option value="aluminum">铝线<\/option>/g)?.length ?? 0) >= 2,
+  );
+  assert.ok(
+    (coilResistance.match(/请输入线圈参数后显示计算结果。/g)?.length ?? 0) >= 2,
+  );
+  assert.doesNotMatch(coilResistance, /铜线电阻率/);
   assert.match(slotPole, /"@type":"WebApplication"/);
   assert.match(wireLayout, /"@type":"WebApplication"/);
   assert.match(coilResistance, /"@type":"WebApplication"/);
