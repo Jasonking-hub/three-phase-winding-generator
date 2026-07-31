@@ -14,6 +14,7 @@ import {
   buildExportFilename,
   buildMotorExportRows,
   buildRoundExportRows,
+  exportCoilCalculation,
 } from '../app/coil-resistance/coil-export.js';
 import { createCoilWorkbook } from '../app/coil-resistance/coil-workbook.js';
 
@@ -87,6 +88,59 @@ test('motor export includes branch counts and all resistance and weight results'
 test('export filename uses a stable local timestamp', () => {
   const date = new Date(2026, 6, 31, 10, 30, 0);
   assert.equal(buildExportFilename('圆形线圈', date), '圆形线圈计算结果_20260731-103000.xlsx');
+});
+
+test('export orchestration downloads one valid calculation with exact workbook arguments', async () => {
+  const calculation = calculateRoundCoil(ROUND_SAMPLE);
+  const expectedRows = buildRoundExportRows(ROUND_SAMPLE, calculation.result);
+  let downloaded;
+  const error = await exportCoilCalculation({
+    calculation,
+    input: ROUND_SAMPLE,
+    sheetName: '圆形线圈',
+    buildRows: buildRoundExportRows,
+    now: new Date(2026, 6, 31, 10, 30, 0),
+    loadWorkbook: async () => ({
+      downloadCoilWorkbook: (...args) => { downloaded = args; },
+    }),
+  });
+
+  assert.equal(error, '');
+  assert.deepEqual(downloaded, [
+    '圆形线圈',
+    expectedRows,
+    '圆形线圈计算结果_20260731-103000.xlsx',
+  ]);
+});
+
+test('export orchestration blocks invalid calculations without loading workbook code', async () => {
+  let loaded = false;
+  const error = await exportCoilCalculation({
+    calculation: { valid: false, result: null },
+    input: ROUND_SAMPLE,
+    sheetName: '圆形线圈',
+    buildRows: buildRoundExportRows,
+    loadWorkbook: async () => {
+      loaded = true;
+      return {};
+    },
+  });
+
+  assert.equal(error, '');
+  assert.equal(loaded, false);
+});
+
+test('export orchestration returns approved message when workbook loading fails', async () => {
+  const calculation = calculateMotorCoil(MOTOR_SAMPLE);
+  const error = await exportCoilCalculation({
+    calculation,
+    input: MOTOR_SAMPLE,
+    sheetName: '矩形线圈',
+    buildRows: buildMotorExportRows,
+    loadWorkbook: async () => { throw new Error('load failed'); },
+  });
+
+  assert.equal(error, 'Excel 导出失败，请重试。');
 });
 
 test('workbook preserves row values and spreadsheet column widths', () => {

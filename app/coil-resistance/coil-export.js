@@ -59,3 +59,25 @@ export function buildExportFilename(label, date = new Date()) {
   const stamp = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
   return `${label}计算结果_${stamp}.xlsx`;
 }
+
+export async function exportCoilCalculation({
+  calculation,
+  input,
+  sheetName,
+  buildRows,
+  now = new Date(),
+  loadWorkbook = () => import('./coil-workbook.js'),
+}) {
+  if (!calculation.valid || !calculation.result) return '';
+  try {
+    const { downloadCoilWorkbook } = await loadWorkbook();
+    downloadCoilWorkbook(
+      sheetName,
+      buildRows(input, calculation.result),
+      buildExportFilename(sheetName, now),
+    );
+    return '';
+  } catch {
+    return 'Excel 导出失败，请重试。';
+  }
+}

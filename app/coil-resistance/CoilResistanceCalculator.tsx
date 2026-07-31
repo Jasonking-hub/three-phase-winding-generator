@@ -9,6 +9,11 @@ import {
   formatResistance,
   formatWeight,
 } from "./coil-resistance.js";
+import {
+  buildMotorExportRows,
+  buildRoundExportRows,
+  exportCoilCalculation,
+} from "./coil-export.js";
 import styles from "./coil-resistance.module.css";
 
 type FormValues = Record<string, string>;
@@ -109,12 +114,32 @@ export default function CoilResistanceCalculator() {
   const [motorValues, setMotorValues] = useState(motorDefaults);
   const [roundTouched, setRoundTouched] = useState(false);
   const [motorTouched, setMotorTouched] = useState(false);
+  const [roundExportError, setRoundExportError] = useState("");
+  const [motorExportError, setMotorExportError] = useState("");
   const round = useMemo(() => calculateRoundCoil(parse(roundValues)), [roundValues]);
   const motor = useMemo(() => calculateMotorCoil(parse(motorValues)), [motorValues]);
 
   const update = (setValues: React.Dispatch<React.SetStateAction<FormValues>>, setTouched: React.Dispatch<React.SetStateAction<boolean>>, name: string, value: string) => {
     setTouched(true);
     setValues((current) => ({ ...current, [name]: value }));
+  };
+
+  const exportRound = async () => {
+    setRoundExportError(await exportCoilCalculation({
+      calculation: round,
+      input: parse(roundValues),
+      sheetName: "圆形线圈",
+      buildRows: buildRoundExportRows,
+    }));
+  };
+
+  const exportMotor = async () => {
+    setMotorExportError(await exportCoilCalculation({
+      calculation: motor,
+      input: parse(motorValues),
+      sheetName: "矩形线圈",
+      buildRows: buildMotorExportRows,
+    }));
   };
 
   return (
@@ -135,7 +160,13 @@ export default function CoilResistanceCalculator() {
           </div>
         </div>
         <section className={styles.resultPanel} aria-label="圆形线圈计算结果" aria-live="polite">
-          <h2>计算结果</h2>
+          <div className={styles.resultHeader}>
+            <h2>计算结果</h2>
+            <button className={styles.exportButton} type="button" onClick={exportRound} disabled={!round.valid}>
+              导出 Excel
+            </button>
+          </div>
+          {roundExportError && <p className={styles.exportError} role="alert">{roundExportError}</p>}
           {!roundTouched ? <p className={styles.empty}>请输入线圈参数后显示计算结果。</p> : round.valid && round.result ? <>
             <ResultRow label="单线圈线材长度" value={formatLength(round.result.length)} unit="mm" />
             <ResultRow label="截面积" value={formatResistance(round.result.area)} unit="mm²" />
@@ -155,7 +186,13 @@ export default function CoilResistanceCalculator() {
           </div>
         </div>
         <section className={styles.resultPanel} aria-label="矩形线圈计算结果" aria-live="polite">
-          <h2>计算结果</h2>
+          <div className={styles.resultHeader}>
+            <h2>计算结果</h2>
+            <button className={styles.exportButton} type="button" onClick={exportMotor} disabled={!motor.valid}>
+              导出 Excel
+            </button>
+          </div>
+          {motorExportError && <p className={styles.exportError} role="alert">{motorExportError}</p>}
           {!motorTouched ? <p className={styles.empty}>请输入线圈参数后显示计算结果。</p> : motor.valid && motor.result ? <>
             <ResultRow label="单线圈线材长度" value={formatLength(motor.result.length)} unit="mm" />
             <ResultRow label="截面积" value={formatResistance(motor.result.area)} unit="mm²" />
