@@ -35,8 +35,11 @@ test("describes the site and each calculator with structured SEO data", async ()
   const coilMetadata = seo.createToolMetadata("coil-resistance");
   assert.match(coilMetadata.description, /铜线/);
   assert.match(coilMetadata.description, /铝线/);
+  assert.match(coilMetadata.description, /电阻/);
   assert.match(coilMetadata.description, /重量/);
+  assert.ok(coilMetadata.keywords.includes("线圈电阻"));
   assert.ok(coilMetadata.keywords.includes("线圈重量"));
+  assert.ok(coilMetadata.keywords.includes("铜线电阻"));
   assert.ok(coilMetadata.keywords.includes("铝线电阻"));
 });
 
