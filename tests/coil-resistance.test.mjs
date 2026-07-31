@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import * as XLSX from 'xlsx';
 
 import {
   calculateMotorCoil,
@@ -9,6 +10,12 @@ import {
   formatResistance,
   formatWeight,
 } from '../app/coil-resistance/coil-resistance.js';
+import {
+  buildExportFilename,
+  buildMotorExportRows,
+  buildRoundExportRows,
+} from '../app/coil-resistance/coil-export.js';
+import { createCoilWorkbook } from '../app/coil-resistance/coil-workbook.js';
 
 const calculatorSource = readFileSync(
   new URL('../app/coil-resistance/CoilResistanceCalculator.tsx', import.meta.url),
@@ -38,6 +45,58 @@ const MOTOR_SAMPLE = {
   branchesPerPhase: 1,
   coilsPerBranch: 1,
 };
+
+test('round export includes every input, material constant, and result as typed rows', () => {
+  const calculation = calculateRoundCoil(ROUND_SAMPLE);
+  const rows = buildRoundExportRows(ROUND_SAMPLE, calculation.result);
+
+  assert.deepEqual(rows, [
+    ['项目', '数值', '单位'],
+    ['线圈材料', '铜线', ''],
+    ['电阻率', 17.24, 'μΩ·mm'],
+    ['密度', 8.96e-6, 'kg/mm³'],
+    ['裸线径 d', 0.61, 'mm'],
+    ['最外圈直径', 71.8, 'mm'],
+    ['最内圈直径', 65.2, 'mm'],
+    ['匝数', 228, '匝'],
+    ['截面积', calculation.result.area, 'mm²'],
+    ['最外圈单匝长度', calculation.result.outerTurnLength, 'mm'],
+    ['最内圈单匝长度', calculation.result.innerTurnLength, 'mm'],
+    ['平均单匝长度', calculation.result.averageTurnLength, 'mm'],
+    ['单线圈线材长度', calculation.result.length, 'mm'],
+    ['单线圈电阻', calculation.result.resistance, 'Ω'],
+    ['单线圈重量', calculation.result.coilWeight, 'kg'],
+  ]);
+});
+
+test('motor export includes branch counts and all resistance and weight results', () => {
+  const calculation = calculateMotorCoil(MOTOR_SAMPLE);
+  const rows = buildMotorExportRows(MOTOR_SAMPLE, calculation.result);
+
+  assert.equal(rows[0][0], '项目');
+  assert.deepEqual(rows.find(([label]) => label === '每相支路数'), ['每相支路数', 1, '支路']);
+  assert.deepEqual(rows.find(([label]) => label === '每支路线圈数'), ['每支路线圈数', 1, '线圈']);
+  assert.deepEqual(rows.find(([label]) => label === '整台三相电机线圈重量'), [
+    '整台三相电机线圈重量',
+    calculation.result.totalWeight,
+    'kg',
+  ]);
+  assert.equal(rows.length, 22);
+});
+
+test('export filename uses a stable local timestamp', () => {
+  const date = new Date(2026, 6, 31, 10, 30, 0);
+  assert.equal(buildExportFilename('圆形线圈', date), '圆形线圈计算结果_20260731-103000.xlsx');
+});
+
+test('workbook preserves row values and spreadsheet column widths', () => {
+  const rows = buildRoundExportRows(ROUND_SAMPLE, calculateRoundCoil(ROUND_SAMPLE).result);
+  const workbook = createCoilWorkbook('圆形线圈', rows);
+  const sheet = workbook.Sheets['圆形线圈'];
+
+  assert.deepEqual(XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true }), rows);
+  assert.deepEqual(sheet['!cols'], [{ wch: 28 }, { wch: 20 }, { wch: 14 }]);
+});
 
 test('calculateRoundCoil matches Excel default resistance', () => {
   const calculation = calculateRoundCoil(ROUND_SAMPLE);
