@@ -143,19 +143,20 @@ test("renders the approved iron-core winding diagram with one centered label per
   assert.match(component, /#007a70/);
 });
 
-test("renders the approved compact title and six-column winding table", async () => {
+test("renders the compact title and winding table with slot pairs and branch order", async () => {
   const page = await readFile(new URL("../app/slot-pole/page.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(page, /槽极配生成器/);
   assert.doesNotMatch(page, /className="kicker"/);
   assert.doesNotMatch(page, /className="intro"/);
   assert.match(page, /<th>线圈标记<\/th>/);
-  assert.doesNotMatch(page, /<th>上层槽<\/th>/);
-  assert.doesNotMatch(page, /<th>下层槽<\/th>/);
+  assert.match(page, /<th>槽对<\/th>/);
+  assert.match(page, /<th>支路<\/th>/);
+  assert.match(page, /<th>路内顺序<\/th>/);
   assert.doesNotMatch(page, /<th>上层标记<\/th>/);
   assert.doesNotMatch(page, /<th>下层标记<\/th>/);
   assert.match(page, /<td>{row\.upperMark}<\/td>/);
-  assert.match(page, /key={`\$\{slots\}:\$\{poles\}`}/);
+  assert.match(page, /key={`\$\{slots\}:\$\{poles\}:\$\{pitch\}:\$\{winding.parallelBranches\}`}/);
   assert.doesNotMatch(page, /resetKey=/);
   assert.match(css, /\.winding-diagram/);
   assert.match(css, /--a: #bc6200/);

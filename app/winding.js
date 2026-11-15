@@ -176,25 +176,74 @@ export function buildWindingDiagramModel(rows, connections) {
     label: row.upperMark,
   }));
 
+  const groups = connections.map((connection) => ({
+      ...connection,
+      coils: coils.filter((coil) => coil.phase === connection.phase),
+      branches: (connection.branches ?? []).map((branch) => ({
+        ...branch,
+        coils: coils.filter((coil) =>
+          coil.phase === connection.phase && coil.branch === branch.branch),
+      })),
+    }));
+
   return {
     slotCount: rows.length,
     toothCount: rows.length,
     coils,
-    groups: connections.map((connection) => ({
-      ...connection,
-      coils: coils.filter((coil) => coil.phase === connection.phase),
-    })),
+    groups,
+    routes: groups.flatMap((group) => group.branches.map((branch) => ({
+      phase: group.phase,
+      displayPhase: group.displayPhase,
+      terminal: group.terminal,
+      ...branch,
+    }))),
   };
 }
 
-export function generateWinding({ slots, poles, notation = "ABC", swapBC = false }) {
-  const recommendedPitch = Math.max(1, Math.floor(slots / poles));
-  const valid = isValidWinding(slots, poles);
+function greatestCommonDivisor(a, b) {
+  while (b !== 0) [a, b] = [b, a % b];
+  return a;
+}
 
-  if (!valid) {
+function phaseCoilBuckets(rows, slots, poles, pitch) {
+  const buckets = new Map();
+  for (const row of rows) {
+    // One tick is 90/Q degrees; reversing a coil adds 180 degrees.
+    const tick = positiveModulo(
+      (2 * (row.coil - 1) + pitch) * poles - slots +
+        (row.polarity === "-" ? 2 * slots : 0),
+      4 * slots,
+    );
+    if (!buckets.has(tick)) buckets.set(tick, []);
+    buckets.get(tick).push(row);
+  }
+  return buckets;
+}
+
+export function generateWinding({
+  slots, poles, pitch = Math.max(1, Math.floor(slots / poles)),
+  parallelBranches = 1, notation = "ABC", swapBC = false,
+}) {
+  const recommendedPitch = Math.max(1, Math.floor(slots / poles));
+  let error = "";
+  if (!isValidWinding(slots, poles)) {
+    error = "Q 须为 3 至 120 的 3 的倍数，P 须为 2 至 120 的偶数。";
+  } else if (!Number.isInteger(pitch) || pitch < 1 || pitch >= slots) {
+    error = "节距 y 须为 1 至 Q−1 的整数。";
+  } else if ((pitch * poles) % (2 * slots) === 0) {
+    error = "此节距的基波节距系数为 0，无法生成有效绕组，请调整节距。";
+  }
+
+  if (error) {
     return {
       recommendedPitch,
-      valid,
+      pitch,
+      valid: false,
+      error,
+      balanced: false,
+      warning: "",
+      parallelOptions: [],
+      parallelBranches: 1,
       rows: [],
       connections: [],
     };
@@ -202,9 +251,9 @@ export function generateWinding({ slots, poles, notation = "ABC", swapBC = false
 
   const rows = Array.from({ length: slots }, (_, index) => {
     const coil = index + 1;
-    const lowerSlot = 1 + positiveModulo(index + recommendedPitch, slots);
+    const lowerSlot = 1 + positiveModulo(index + pitch, slots);
     const electricalAngle = positiveModulo(
-      (index + recommendedPitch / 2) * 180 * poles / slots - 90,
+      (index + pitch / 2) * 180 * poles / slots - 90,
       360,
     );
     const belt = Math.floor(positiveModulo(electricalAngle - 0.1 + 30, 360) / 60);
@@ -226,19 +275,62 @@ export function generateWinding({ slots, poles, notation = "ABC", swapBC = false
       connection: `${displayPhase}${polarity} → ${displayPhase}${polarity === "+" ? "-" : "+"}`,
       polarity,
       electricalAngle: Math.round(electricalAngle * 100) / 100,
+      branch: 1,
+      branchOrder: 0,
     };
   });
 
   const connectionPhases = swapBC ? ["A", "C", "B"] : PHASES;
-  const connections = connectionPhases.map((phase) => {
+  const phaseBuckets = connectionPhases.map((phase) =>
+    phaseCoilBuckets(rows.filter((row) => row.phase === phase), slots, poles, pitch));
+  const signatures = phaseBuckets.map((buckets, index) => JSON.stringify(
+    [...buckets].map(([tick, coils]) => [
+      positiveModulo(tick + [0, 4 * slots / 3, -4 * slots / 3][index], 4 * slots),
+      coils.length,
+    ]).sort((a, b) => a[0] - b[0]),
+  ));
+  const balanced = phaseBuckets[0].size > 0 && signatures.every((value) => value === signatures[0]);
+  const maximumBranches = balanced
+    ? phaseBuckets.flatMap((buckets) => [...buckets.values()].map((coils) => coils.length))
+      .reduce(greatestCommonDivisor, 0)
+    : 1;
+  const parallelOptions = Array.from({ length: maximumBranches }, (_, index) => index + 1)
+    .filter((count) => maximumBranches % count === 0);
+  const selectedBranches = parallelOptions.includes(parallelBranches) ? parallelBranches : 1;
+
+  const connections = connectionPhases.map((phase, phaseIndex) => {
     const displayPhase = phaseForDisplay(phase, notation);
+    const branches = Array.from({ length: selectedBranches }, (_, index) => ({
+      branch: index + 1,
+      coils: /** @type {typeof rows} */ ([]),
+    }));
+    for (const coils of phaseBuckets[phaseIndex].values()) {
+      const coilsPerBranch = coils.length / selectedBranches;
+      coils.forEach((coil, index) => {
+        branches[Math.floor(index / coilsPerBranch)].coils.push(coil);
+      });
+    }
+    for (const { branch, coils } of branches) {
+      coils.sort((a, b) => a.coil - b.coil);
+      coils.forEach((coil, index) => {
+        coil.branch = branch;
+        coil.branchOrder = index + 1;
+      });
+    }
     return {
       phase,
       displayPhase,
-      rule: `${displayPhase}+ 与 ${displayPhase}- 组按同相串联`,
+      rule: selectedBranches === 1
+        ? `${displayPhase}+ 与 ${displayPhase}- 组按同相串联`
+        : `${selectedBranches} 条等效支路并联，各支路内部串联`,
       terminal: terminalFor(phase),
+      branches,
     };
   });
 
-  return { recommendedPitch, valid, rows, connections };
+  return {
+    recommendedPitch, pitch, valid: true, error: "", balanced,
+    warning: balanced ? "" : "此槽极组合的三相绕组不对称，仅显示串联接线，不提供并联支路。",
+    parallelOptions, parallelBranches: selectedBranches, rows, connections,
+  };
 }

@@ -56,6 +56,13 @@ test("static export exposes the toolbox home and all three calculators", async (
   assert.match(slotPole, /id="slots"[^>]*min="3"/);
   assert.match(slotPole, /id="poles"[^>]*value="10"/);
   assert.match(slotPole, /id="poles"[^>]*min="2"/);
+  assert.match(slotPole, /id="pitch"[^>]*value="1"/);
+  assert.match(slotPole, /id="pitch"[^>]*max="11"/);
+  assert.match(slotPole, /<select[^>]*id="parallel-branches"/);
+  assert.match(slotPole, /<option value="1" selected="">1（全部串联）<\/option>/);
+  assert.match(slotPole, /<option value="2">2（每相 2 路并联）<\/option>/);
+  assert.match(slotPole, /图形宽度不代表节距/);
+  assert.match(slotPole, /<th>支路<\/th>/);
   assert.match(wireLayout, /<label[^>]*for="layer-diameter"[^>]*>含漆膜实际外径 D<\/label>/);
   assert.match(wireLayout, /id="layer-diameter"[^>]*value="0\.87"/);
   assert.match(wireLayout, /id="capacity-diameter"[^>]*value="0\.62"/);

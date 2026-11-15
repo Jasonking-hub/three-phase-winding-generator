@@ -60,6 +60,103 @@ test("uses workbook validation limits", () => {
   assert.equal(generateWinding({ slots: 12, poles: 9 }).rows.length, 0);
 });
 
+test("uses the entered pitch for slot pairs and electrical angles, including wraparound", () => {
+  const result = generateWinding({ slots: 12, poles: 10, pitch: 2 });
+  assert.equal(result.valid, true);
+  assert.equal(result.pitch, 2);
+  assert.equal(result.recommendedPitch, 1);
+  assert.deepEqual(result.rows.slice(0, 2).map(({ upperSlot, lowerSlot, electricalAngle }) =>
+    [upperSlot, lowerSlot, electricalAngle]), [[1, 3, 60], [2, 4, 210]]);
+  assert.equal(result.rows[11].lowerSlot, 2);
+  assert.equal(generateWinding({ slots: 36, poles: 4 }).pitch, 9);
+});
+
+test("rejects invalid and zero-fundamental pitches without producing connections", () => {
+  for (const pitch of [0, -1, 12, 1.5, NaN, Infinity, null]) {
+    const result = generateWinding({ slots: 12, poles: 10, pitch });
+    assert.equal(result.valid, false, `pitch=${pitch}`);
+    assert.equal(result.rows.length, 0);
+    assert.equal(result.connections.length, 0);
+    assert.deepEqual(result.parallelOptions, []);
+    assert.ok(result.error);
+  }
+  const zero = generateWinding({ slots: 12, poles: 4, pitch: 6 });
+  assert.equal(zero.valid, false);
+  assert.match(zero.error, /基波/);
+});
+
+test("offers only constructible equal-composition parallel paths", () => {
+  for (const [slots, poles, pitch, options] of [
+    [9, 8, 1, [1]],
+    [12, 10, 1, [1, 2]],
+    [36, 4, 9, [1, 2, 4]],
+    [24, 4, 6, [1, 2, 4]],
+  ]) {
+    const result = generateWinding({ slots, poles, pitch });
+    assert.equal(result.balanced, true);
+    assert.deepEqual(result.parallelOptions, options, `${slots}/${poles}/${pitch}`);
+  }
+});
+
+test("warns about asymmetric phases and restricts them to series", () => {
+  const result = generateWinding({ slots: 12, poles: 6, pitch: 1, parallelBranches: 2 });
+  assert.equal(result.valid, true);
+  assert.equal(result.balanced, false);
+  assert.match(result.warning, /不对称/);
+  assert.deepEqual(result.parallelOptions, [1]);
+  assert.equal(result.parallelBranches, 1);
+});
+
+test("falls back to series for unavailable branch counts", () => {
+  for (const parallelBranches of [3, 0, -1, 1.5, NaN]) {
+    const result = generateWinding({ slots: 12, poles: 10, pitch: 1, parallelBranches });
+    assert.equal(result.parallelBranches, 1);
+    assert.ok(result.rows.every((row) => row.branch === 1));
+  }
+});
+
+test("partitions all phase coils into equivalent paths without omissions or duplicates", () => {
+  const result = generateWinding({ slots: 12, poles: 10, pitch: 1, parallelBranches: 2 });
+  assert.equal(result.parallelBranches, 2);
+  assert.deepEqual(result.connections[0].branches.map(({ coils }) => coils.map(({ coil }) => coil)),
+    [[1, 6], [7, 12]]);
+  const allCoils = result.connections.flatMap(({ branches }) => branches.flatMap(({ coils }) => coils));
+  assert.deepEqual(allCoils.map(({ coil }) => coil).sort((a, b) => a - b),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  for (const connection of result.connections) {
+    const signatures = connection.branches.map(({ branch, coils }) => {
+      assert.equal(coils.length, 2);
+      assert.deepEqual(coils.map(({ branchOrder }) => branchOrder), [1, 2]);
+      assert.ok(coils.every((coil) => coil.branch === branch));
+      return coils.map(({ electricalAngle, polarity }) =>
+        (electricalAngle + (polarity === "-" ? 180 : 0)) % 360).sort((a, b) => a - b);
+    });
+    assert.deepEqual(signatures[0], signatures[1]);
+  }
+  const model = buildWindingDiagramModel(result.rows, result.connections);
+  assert.equal(model.groups[0].branches.length, 2);
+  assert.equal(model.groups[0].branches[0].coils[0].label, "A+");
+  assert.deepEqual(model.routes.map(({ phase, branch }) => [phase, branch]),
+    [["A", 1], ["A", 2], ["B", 1], ["B", 2], ["C", 1], ["C", 2]]);
+  const layouts = buildPhaseRouteLayouts(model.routes, 486, 24, 36);
+  const geometry = new Map(model.coils.map((coil, index) => [coil.coil, fixedCoilGeometry(index, 90)]));
+  for (const [index, route] of model.routes.entries()) {
+    const segments = buildSeriesRouteSegments(route.coils, geometry, layouts[index].laneYs, 78, 1200);
+    assert.equal(segments.length, 3);
+    assert.ok(segments[0].d.startsWith(`M 78 ${layouts[index].startY}`));
+    assert.ok(segments.at(-1).d.endsWith("H 1200"));
+  }
+});
+
+test("phase display changes preserve parallel options and selected paths", () => {
+  const result = generateWinding({ slots: 12, poles: 10, pitch: 1, parallelBranches: 2,
+    notation: "UVW", swapBC: true });
+  assert.deepEqual(result.parallelOptions, [1, 2]);
+  assert.equal(result.parallelBranches, 2);
+  assert.deepEqual(result.connections.map(({ displayPhase }) => displayPhase), ["U", "W", "V"]);
+  assert.ok(result.connections.every(({ branches }) => branches.length === 2));
+});
+
 test("groups winding rows for ABC, UVW, and swapped phase diagrams", () => {
   const abc = generateWinding({ slots: 12, poles: 10, notation: "ABC" });
   const abcDiagram = buildWindingDiagram(abc.rows, abc.connections);

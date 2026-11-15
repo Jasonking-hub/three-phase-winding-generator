@@ -41,6 +41,8 @@ type WindingRow = {
   upperMark: string;
   polarity: string;
   electricalAngle: number;
+  branch: number;
+  branchOrder: number;
 };
 
 type WindingConnection = {
@@ -55,6 +57,8 @@ type DiagramCoil = WindingRow & {
 
 type WindingResult = {
   valid: boolean;
+  pitch: number;
+  parallelBranches: number;
   rows: WindingRow[];
   connections: WindingConnection[];
 };
@@ -84,7 +88,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
   );
   const starX = naturalWidth - 108;
   const phaseRouteLayouts = buildPhaseRouteLayouts(
-    model.groups,
+    model.routes,
     ROUTE_START_Y,
     ROUTE_LANE_GAP,
     PHASE_ROUTE_GAP,
@@ -150,7 +154,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
   }, []);
 
   if (!winding.valid) {
-    return <div className="diagram-empty">输入有效的 Q 和 P 后显示三相接线图。</div>;
+    return <div className="diagram-empty">输入有效的 Q、P 和 y 后显示三相接线图。</div>;
   }
 
   return (
@@ -158,7 +162,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
       <div className="diagram-heading">
         <div>
           <h3 id="diagram-title">三相接线图</h3>
-          <p>铁芯、左右双层线圈与同相串联关系随当前参数同步更新。</p>
+          <p>节距 y = {winding.pitch}，每相 {winding.parallelBranches} 路。展开接线示意，图形宽度不代表节距；槽对标明上层槽 / 下层槽。</p>
         </div>
         <span className="diagram-zoom-value" aria-live="polite">
           {Math.round(scale * 100)}%
@@ -179,7 +183,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
           aria-labelledby="diagram-title diagram-description"
         >
           <desc id="diagram-description">
-            {`${model.slotCount} 个铁芯齿、${model.coils.length} 个等尺寸线圈、极性反向串联及星形公共点。`}
+            {`${model.coils.length} 个线圈，每相 ${winding.parallelBranches} 路，支路内部按极性串联，同相支路共用首端，末端接星形公共点。图形宽度不代表节距。`}
           </desc>
 
           <defs>
@@ -246,15 +250,22 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                   >
                     {coil.label}
                   </text>
+                  <text
+                    className="diagram-coil-label"
+                    x={geometry.centerX}
+                    y={LABEL_Y + 24}
+                  >
+                    {coil.upperSlot}/{coil.lowerSlot}
+                  </text>
                 </g>
               );
             })}
           </g>
 
           <g className="diagram-routes">
-            {model.groups.map(
+            {model.routes.map(
               (
-                group: WindingConnection & { coils: DiagramCoil[] },
+                group: WindingConnection & { branch: number; coils: DiagramCoil[] },
                 groupIndex: number,
               ) => {
                 const stroke =
@@ -271,7 +282,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                 );
                 const [startTerminal] = group.terminal.split(" / ");
                 return (
-                  <g key={group.phase} style={{ color: stroke }}>
+                  <g key={`${group.phase}-${group.branch}`} style={{ color: stroke }} data-phase={group.phase} data-branch={group.branch}>
                     {segments.map(
                       (segment: {
                         order: number;
@@ -279,7 +290,7 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                         labelX: number;
                         d: string;
                       }) => (
-                        <g key={`${group.phase}-${segment.order}`}>
+                        <g key={`${group.phase}-${group.branch}-${segment.order}`}>
                           <path
                             className="diagram-series-line"
                             d={segment.d}
@@ -302,12 +313,29 @@ export default function WindingDiagram({ winding }: { winding: WindingResult }) 
                       x="18"
                       y={layout.startY + 5}
                     >
-                      {group.displayPhase} 相 {startTerminal}
+                      {group.displayPhase}{group.branch} {startTerminal}
                     </text>
                   </g>
                 );
               },
             )}
+            {model.groups.map((group: WindingConnection) => {
+              const layouts = phaseRouteLayouts.filter((_: unknown, index: number) =>
+                model.routes[index].phase === group.phase);
+              if (layouts.length === 0) return null;
+              const stroke = PHASE_STROKE[group.displayPhase as keyof typeof PHASE_STROKE];
+              return (
+                <g key={`phase-bus-${group.phase}`} style={{ color: stroke }}>
+                  <path className="diagram-series-line" d={`M 78 ${layouts[0].startY} V ${layouts[layouts.length - 1].startY}`} />
+                  {layouts.map(({ startY, endY }: { startY: number; endY: number }) => (
+                    <g key={startY}>
+                      <circle cx={78} cy={startY} r={4} fill="currentColor" />
+                      <circle cx={starX} cy={endY} r={4} fill="currentColor" />
+                    </g>
+                  ))}
+                </g>
+              );
+            })}
             <g className="diagram-star-point">
               <path
                 className="diagram-star-bus"
