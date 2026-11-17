@@ -22,14 +22,18 @@ type FormValues = Record<string, string>;
 const roundDefaults: FormValues = {
   material: "copper",
   wireDiameter: "",
+  parallelWires: "1",
   outerDiameter: "",
   innerDiameter: "",
   turns: "",
+  branchesPerPhase: "1",
+  coilsPerBranch: "1",
 };
 
 const motorDefaults: FormValues = {
   material: "copper",
   wireDiameter: "",
+  parallelWires: "1",
   outerLength: "",
   outerWidth: "",
   innerLength: "",
@@ -40,20 +44,24 @@ const motorDefaults: FormValues = {
 };
 
 const roundFields = [
-  ["wireDiameter", "裸线径 d", "mm"],
+  ["wireDiameter", "单根裸线径 d", "mm"],
+  ["parallelWires", "并绕根数", "根"],
   ["outerDiameter", "最外圈直径", "mm"],
   ["innerDiameter", "最内圈直径", "mm"],
   ["turns", "匝数", "匝"],
+  ["branchesPerPhase", "每相并联支路数", "支路"],
+  ["coilsPerBranch", "每支路线圈数", "线圈"],
 ] as const;
 
 const motorFields = [
-  ["wireDiameter", "裸线径 d", "mm"],
+  ["wireDiameter", "单根裸线径 d", "mm"],
+  ["parallelWires", "并绕根数", "根"],
   ["outerLength", "最外圈长", "mm"],
   ["outerWidth", "最外圈宽", "mm"],
   ["innerLength", "最内圈长", "mm"],
   ["innerWidth", "最内圈宽", "mm"],
   ["turns", "匝数", "匝"],
-  ["branchesPerPhase", "每相支路数", "支路"],
+  ["branchesPerPhase", "每相并联支路数", "支路"],
   ["coilsPerBranch", "每支路线圈数", "线圈"],
 ] as const;
 
@@ -148,13 +156,13 @@ export default function CoilResistanceCalculator() {
       <header className={styles.header}>
         <p className={styles.kicker}>电机工程计算</p>
         <h1>线圈电阻计算器</h1>
-        <p>根据线圈几何尺寸和材料，计算铜线或铝线的电阻与重量。</p>
+        <p>支持同材质、同裸线径的多根线并绕，匝数按每根线填写。并绕根数与每相并联支路数分别计算，P-P 电阻按三相对称星形接法计算。</p>
       </header>
 
       <section className={styles.calculator} aria-labelledby="round-title">
         <div className={styles.inputPanel}>
           <h2 id="round-title">圆形线圈</h2>
-          <p>输入材料、尺寸与匝数，计算单线圈线材长度、电阻和重量。</p>
+          <p>并绕根数指同一线圈内两端并接的导线根数；每相并联支路数指串联线圈组的并联数量。只算单线圈时，支路数和每支路线圈数均填 1。</p>
           <div className={styles.fields}>
             <MaterialField id="round-material" value={roundValues.material} onChange={(value) => update(setRoundValues, setRoundTouched, "material", value)} />
             {roundFields.map(([name, label, unit]) => <Field key={name} id={`round-${name}`} label={label} unit={unit} value={roundValues[name]} error={roundTouched ? round.errors[name] : undefined} onChange={(value) => update(setRoundValues, setRoundTouched, name, value)} />)}
@@ -169,10 +177,15 @@ export default function CoilResistanceCalculator() {
           </div>
           {roundExportError && <p className={styles.exportError} role="alert">{roundExportError}</p>}
           {!roundTouched ? <p className={styles.empty}>请输入线圈参数后显示计算结果。</p> : round.valid && round.result ? <>
-            <ResultRow label="单线圈线材长度" value={formatLength(round.result.length)} unit="mm" />
-            <ResultRow label="截面积" value={formatResistance(round.result.area)} unit="mm²" />
+            <ResultRow label="每根线长度" value={formatLength(round.result.length)} unit="mm" />
+            <ResultRow label="单线圈总用线长度" value={formatLength(round.result.totalWireLength)} unit="mm" />
+            <ResultRow label="单根截面积" value={formatResistance(round.result.area)} unit="mm²" />
+            <ResultRow label="并绕总截面积" value={formatResistance(round.result.effectiveArea)} unit="mm²" />
             <ResultRow label="单线圈电阻" value={formatResistance(round.result.resistance)} unit="Ω" />
+            <ResultRow label="单相电阻" value={formatResistance(round.result.phaseResistance)} unit="Ω" />
+            <ResultRow label="P-P 电阻（星形）" value={formatResistance(round.result.lineToLineResistance)} unit="Ω" />
             <ResultRow label="单线圈重量" value={formatWeight(round.result.coilWeight)} unit="kg" />
+            <ResultRow label="整台三相电机线圈重量" value={formatWeight(round.result.totalWeight)} unit="kg" />
           </> : <p className={styles.invalid}>请修正标记字段后显示计算结果。</p>}
         </section>
       </section>
@@ -180,7 +193,7 @@ export default function CoilResistanceCalculator() {
       <section className={styles.calculator} aria-labelledby="motor-title">
         <div className={styles.inputPanel}>
           <h2 id="motor-title">矩形线圈</h2>
-          <p>按矩形匝长及三相支路关系计算电阻和线圈重量。</p>
+          <p>按矩形匝长、并绕根数及三相支路关系计算。每支路线圈数指该支路内部串联的线圈个数，计数均须为正整数。</p>
           <div className={styles.fields}>
             <MaterialField id="motor-material" value={motorValues.material} onChange={(value) => update(setMotorValues, setMotorTouched, "material", value)} />
             {motorFields.map(([name, label, unit]) => <Field key={name} id={`motor-${name}`} label={label} unit={unit} value={motorValues[name]} error={motorTouched ? motor.errors[name] : undefined} onChange={(value) => update(setMotorValues, setMotorTouched, name, value)} />)}
@@ -195,11 +208,13 @@ export default function CoilResistanceCalculator() {
           </div>
           {motorExportError && <p className={styles.exportError} role="alert">{motorExportError}</p>}
           {!motorTouched ? <p className={styles.empty}>请输入线圈参数后显示计算结果。</p> : motor.valid && motor.result ? <>
-            <ResultRow label="单线圈线材长度" value={formatLength(motor.result.length)} unit="mm" />
-            <ResultRow label="截面积" value={formatResistance(motor.result.area)} unit="mm²" />
+            <ResultRow label="每根线长度" value={formatLength(motor.result.length)} unit="mm" />
+            <ResultRow label="单线圈总用线长度" value={formatLength(motor.result.totalWireLength)} unit="mm" />
+            <ResultRow label="单根截面积" value={formatResistance(motor.result.area)} unit="mm²" />
+            <ResultRow label="并绕总截面积" value={formatResistance(motor.result.effectiveArea)} unit="mm²" />
             <ResultRow label="单线圈电阻" value={formatResistance(motor.result.coilResistance)} unit="Ω" />
             <ResultRow label="单相电阻" value={formatResistance(motor.result.phaseResistance)} unit="Ω" />
-            <ResultRow label="P-P 电阻" value={formatResistance(motor.result.lineToLineResistance)} unit="Ω" />
+            <ResultRow label="P-P 电阻（星形）" value={formatResistance(motor.result.lineToLineResistance)} unit="Ω" />
             <ResultRow label="单线圈重量" value={formatWeight(motor.result.coilWeight)} unit="kg" />
             <ResultRow label="整台三相电机线圈重量" value={formatWeight(motor.result.totalWeight)} unit="kg" />
           </> : <p className={styles.invalid}>请修正标记字段后显示计算结果。</p>}

@@ -66,7 +66,14 @@ test("static export exposes the toolbox home and all three calculators", async (
   assert.match(wireLayout, /<label[^>]*for="layer-diameter"[^>]*>含漆膜实际外径 D<\/label>/);
   assert.match(wireLayout, /id="layer-diameter"[^>]*value="0\.87"/);
   assert.match(wireLayout, /id="capacity-diameter"[^>]*value="0\.62"/);
-  assert.match(coilResistance, /<label[^>]*for="round-wireDiameter"[^>]*>裸线径 d<\/label>/);
+  assert.match(coilResistance, /<label[^>]*for="round-wireDiameter"[^>]*>单根裸线径 d<\/label>/);
+  for (const id of ['round-parallelWires', 'motor-parallelWires', 'round-branchesPerPhase', 'round-coilsPerBranch']) {
+    assert.match(coilResistance, new RegExp(`<input[^>]*id="${id}"[^>]*value="1"`));
+  }
+  for (const prefix of ['round', 'motor']) {
+    assert.match(coilResistance, new RegExp(`<label[^>]*for="${prefix}-parallelWires"[^>]*>并绕根数<\\/label>`));
+    assert.match(coilResistance, new RegExp(`<label[^>]*for="${prefix}-branchesPerPhase"[^>]*>每相并联支路数<\\/label>`));
+  }
   for (const id of [
     "round-wireDiameter",
     "round-outerDiameter",

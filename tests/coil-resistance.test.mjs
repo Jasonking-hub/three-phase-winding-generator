@@ -57,17 +57,25 @@ test('round export includes every input, material constant, and result as typed 
     ['线圈材料', '铜线', ''],
     ['电阻率', 17.24, 'μΩ·mm'],
     ['密度', 8.96e-6, 'kg/mm³'],
-    ['裸线径 d', 0.61, 'mm'],
+    ['单根裸线径 d', 0.61, 'mm'],
+    ['并绕根数', 1, '根'],
     ['最外圈直径', 71.8, 'mm'],
     ['最内圈直径', 65.2, 'mm'],
     ['匝数', 228, '匝'],
-    ['截面积', calculation.result.area, 'mm²'],
+    ['每相并联支路数', 1, '支路'],
+    ['每支路线圈数', 1, '线圈'],
+    ['单根截面积', calculation.result.area, 'mm²'],
+    ['并绕总截面积', calculation.result.effectiveArea, 'mm²'],
     ['最外圈单匝长度', calculation.result.outerTurnLength, 'mm'],
     ['最内圈单匝长度', calculation.result.innerTurnLength, 'mm'],
     ['平均单匝长度', calculation.result.averageTurnLength, 'mm'],
-    ['单线圈线材长度', calculation.result.length, 'mm'],
+    ['每根线长度', calculation.result.length, 'mm'],
+    ['单线圈总用线长度', calculation.result.totalWireLength, 'mm'],
     ['单线圈电阻', calculation.result.resistance, 'Ω'],
+    ['单相电阻', calculation.result.phaseResistance, 'Ω'],
+    ['P-P 电阻（星形）', calculation.result.lineToLineResistance, 'Ω'],
     ['单线圈重量', calculation.result.coilWeight, 'kg'],
+    ['整台三相电机线圈重量', calculation.result.totalWeight, 'kg'],
   ]);
 });
 
@@ -80,22 +88,25 @@ test('motor export includes every input, material constant, and result as typed 
     ['线圈材料', '铜线', ''],
     ['电阻率', 17.24, 'μΩ·mm'],
     ['密度', 8.96e-6, 'kg/mm³'],
-    ['裸线径 d', 0.8, 'mm'],
+    ['单根裸线径 d', 0.8, 'mm'],
+    ['并绕根数', 1, '根'],
     ['最外圈长', 158, 'mm'],
     ['最外圈宽', 23.5, 'mm'],
     ['最内圈长', 140, 'mm'],
     ['最内圈宽', 5.5, 'mm'],
     ['匝数', 44, '匝'],
-    ['每相支路数', 1, '支路'],
+    ['每相并联支路数', 1, '支路'],
     ['每支路线圈数', 1, '线圈'],
-    ['截面积', calculation.result.area, 'mm²'],
+    ['单根截面积', calculation.result.area, 'mm²'],
+    ['并绕总截面积', calculation.result.effectiveArea, 'mm²'],
     ['最外圈单匝长度', calculation.result.outerTurnLength, 'mm'],
     ['最内圈单匝长度', calculation.result.innerTurnLength, 'mm'],
     ['平均单匝长度', calculation.result.averageTurnLength, 'mm'],
-    ['单线圈线材长度', calculation.result.length, 'mm'],
+    ['每根线长度', calculation.result.length, 'mm'],
+    ['单线圈总用线长度', calculation.result.totalWireLength, 'mm'],
     ['单线圈电阻', calculation.result.coilResistance, 'Ω'],
     ['单相电阻', calculation.result.phaseResistance, 'Ω'],
-    ['P-P 电阻', calculation.result.lineToLineResistance, 'Ω'],
+    ['P-P 电阻（星形）', calculation.result.lineToLineResistance, 'Ω'],
     ['单线圈重量', calculation.result.coilWeight, 'kg'],
     ['整台三相电机线圈重量', calculation.result.totalWeight, 'kg'],
   ]);
@@ -214,6 +225,35 @@ test('workbook preserves row values and spreadsheet column widths', () => {
   assert.deepEqual(sheet['!cols'], [{ wch: 28 }, { wch: 20 }, { wch: 14 }]);
 });
 
+test('serialized Excel workbooks preserve combined parallel inputs and resistance results', () => {
+  for (const [calculate, buildRows, sample, label, expected] of [
+    [calculateRoundCoil, buildRoundExportRows, ROUND_SAMPLE, '圆形线圈', {
+      resistance: 0.9648098898145658, phaseResistance: 1.9296197796291317,
+      totalWireLength: 147196.182163662, totalWeight: 9.25050300380061,
+    }],
+    [calculateMotorCoil, buildMotorExportRows, MOTOR_SAMPLE, '矩形线圈', {
+      resistance: 0.1644926815780128, phaseResistance: 0.3289853631560256,
+      totalWireLength: 43164, totalWeight: 4.665635325885078,
+    }],
+  ]) {
+    const input = { ...sample, parallelWires: 3, branchesPerPhase: 2, coilsPerBranch: 4 };
+    const calculation = calculate(input);
+    const workbook = createCoilWorkbook(label, buildRows(input, calculation.result));
+    const bytes = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const restored = XLSX.read(bytes, { type: 'buffer' });
+    const rows = XLSX.utils.sheet_to_json(restored.Sheets[label], { header: 1, raw: true });
+    const values = new Map(rows.slice(1).map(([name, value]) => [name, value]));
+    assert.equal(values.get('并绕根数'), 3);
+    assert.equal(values.get('每相并联支路数'), 2);
+    assert.equal(values.get('每支路线圈数'), 4);
+    assertClose(values.get('单线圈电阻'), expected.resistance);
+    assertClose(values.get('单相电阻'), expected.phaseResistance);
+    assertClose(values.get('P-P 电阻（星形）'), 2 * expected.phaseResistance);
+    assertClose(values.get('单线圈总用线长度'), expected.totalWireLength, 1e-8);
+    assertClose(values.get('整台三相电机线圈重量'), expected.totalWeight);
+  }
+});
+
 test('calculateRoundCoil matches Excel default resistance', () => {
   const calculation = calculateRoundCoil(ROUND_SAMPLE);
 
@@ -243,6 +283,83 @@ test('calculateMotorCoil matches Excel default values', () => {
   assertClose(calculation.result.coilResistance, 0.4934780447340384);
   assertClose(calculation.result.phaseResistance, 0.4934780447340384);
   assertClose(calculation.result.lineToLineResistance, 0.9869560894680768);
+});
+
+test('round coil combines four parallel wires with two phase branches of three coils', () => {
+  const { valid, result } = calculateRoundCoil({
+    ...ROUND_SAMPLE, parallelWires: 4, branchesPerPhase: 2, coilsPerBranch: 3,
+  });
+  assert.equal(valid, true);
+  assertClose(result.resistance, 0.7236074173609244);
+  assertClose(result.phaseResistance, 1.0854111260413866);
+  assertClose(result.lineToLineResistance, 2.170822252082773);
+  assertClose(result.area, 0.292246656545325);
+  assertClose(result.effectiveArea, 1.1689866261813);
+  assertClose(result.length, 49065.394054554, 1e-8);
+  assertClose(result.totalWireLength, 196261.576218216, 1e-8);
+  assertClose(result.coilWeight, 0.5139168335444783);
+  assertClose(result.totalWeight, 9.25050300380061);
+});
+
+test('motor coil combines three parallel wires with two phase branches of four coils', () => {
+  const { valid, result } = calculateMotorCoil({
+    ...MOTOR_SAMPLE, parallelWires: 3, branchesPerPhase: 2, coilsPerBranch: 4,
+  });
+  assert.equal(valid, true);
+  assertClose(result.coilResistance, 0.1644926815780128);
+  assertClose(result.phaseResistance, 0.3289853631560256);
+  assertClose(result.lineToLineResistance, 0.6579707263120512);
+  assertClose(result.effectiveArea, 1.50796447368);
+  assertClose(result.length, 14388);
+  assertClose(result.totalWireLength, 43164);
+  assertClose(result.coilWeight, 0.19440147191187825);
+  assertClose(result.totalWeight, 4.665635325885078);
+});
+
+test('parallel wires reduce resistance and increase material usage for copper and aluminum', () => {
+  for (const [calculate, sample, resistanceKey] of [
+    [calculateRoundCoil, ROUND_SAMPLE, 'resistance'],
+    [calculateMotorCoil, MOTOR_SAMPLE, 'coilResistance'],
+  ]) {
+    for (const material of ['copper', 'aluminum']) {
+      const single = calculate({ ...sample, material }).result;
+      for (const parallelWires of [1, 2, 3, 4]) {
+        const parallel = calculate({ ...sample, material, parallelWires }).result;
+        assertClose(parallel[resistanceKey], single[resistanceKey] / parallelWires);
+        assertClose(parallel.coilWeight, single.coilWeight * parallelWires);
+        assertClose(parallel.totalWireLength, single.length * parallelWires, 1e-8);
+        assertClose(parallel.length, single.length, 1e-8);
+      }
+    }
+  }
+});
+
+test('new round branch inputs preserve the single-coil API and independently scale the phase', () => {
+  const single = calculateRoundCoil(ROUND_SAMPLE).result;
+  assertClose(single.phaseResistance, 2.8944296694436975);
+  assertClose(single.lineToLineResistance, 5.788859338887395);
+  assertClose(single.totalWeight, 0.3854376251583587);
+  const branched = calculateRoundCoil({ ...ROUND_SAMPLE, branchesPerPhase: 3, coilsPerBranch: 2 }).result;
+  assertClose(branched.resistance, single.resistance);
+  assertClose(branched.coilWeight, single.coilWeight);
+  assertClose(branched.phaseResistance, 1.9296197796291317);
+  assertClose(branched.totalWeight, 2.3126257509501524);
+});
+
+test('new counts reject explicit invalid values without falling back to one', () => {
+  for (const [calculate, sample, fields] of [
+    [calculateRoundCoil, ROUND_SAMPLE, ['parallelWires', 'branchesPerPhase', 'coilsPerBranch']],
+    [calculateMotorCoil, MOTOR_SAMPLE, ['parallelWires', 'branchesPerPhase', 'coilsPerBranch']],
+  ]) {
+    for (const field of fields) {
+      for (const value of [0, -1, 1.5, NaN, Infinity, null, '2']) {
+        const calculation = calculate({ ...sample, [field]: value });
+        assert.equal(calculation.valid, false, `${calculate.name}: ${field}=${value}`);
+        assert.ok(calculation.errors[field]);
+        assert.equal(calculation.result, null);
+      }
+    }
+  }
 });
 
 test('calculators reject zero, non-finite, and non-integer count inputs', () => {

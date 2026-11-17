@@ -14,24 +14,40 @@ export const COIL_MATERIALS = {
 };
 
 export function calculateRoundCoil(input) {
-  const { wireDiameter, outerDiameter, innerDiameter, turns } = input;
-  const errors = validatePositive(input, ['wireDiameter', 'outerDiameter', 'innerDiameter', 'turns'], ['turns']);
+  const {
+    wireDiameter, outerDiameter, innerDiameter, turns,
+    parallelWires = 1, branchesPerPhase = 1, coilsPerBranch = 1,
+  } = input;
+  const errors = validatePositive(
+    { ...input, parallelWires, branchesPerPhase, coilsPerBranch },
+    ['wireDiameter', 'outerDiameter', 'innerDiameter', 'turns', 'parallelWires', 'branchesPerPhase', 'coilsPerBranch'],
+    ['turns', 'parallelWires', 'branchesPerPhase', 'coilsPerBranch'],
+  );
   const material = getMaterial(input.material, errors);
   if (Object.keys(errors).length > 0) {
     return { valid: false, errors, result: null };
   }
   const area = PI_CIRCLE * (wireDiameter / 2) ** 2;
+  const effectiveArea = area * parallelWires;
   const outerTurnLength = PI_CIRCLE * outerDiameter;
   const innerTurnLength = PI_CIRCLE * innerDiameter;
   const averageTurnLength = (outerTurnLength + innerTurnLength) / 2;
   const length = turns * averageTurnLength;
-  const resistance = material.resistivity * length / area / 1e6;
-  const coilWeight = area * length * material.densityKgPerCubicMillimeter;
+  const totalWireLength = length * parallelWires;
+  const resistance = material.resistivity * length / effectiveArea / 1e6;
+  const phaseResistance = resistance * coilsPerBranch / branchesPerPhase;
+  const lineToLineResistance = 2 * phaseResistance;
+  const coilWeight = area * totalWireLength * material.densityKgPerCubicMillimeter;
+  const totalWeight = coilWeight * 3 * branchesPerPhase * coilsPerBranch;
 
   return {
     valid: true,
     errors: {},
-    result: { area, outerTurnLength, innerTurnLength, averageTurnLength, length, resistance, coilWeight },
+    result: {
+      area, effectiveArea, outerTurnLength, innerTurnLength, averageTurnLength,
+      length, totalWireLength, resistance, phaseResistance, lineToLineResistance,
+      coilWeight, totalWeight,
+    },
   };
 }
 
@@ -43,13 +59,14 @@ export function calculateMotorCoil(input) {
     innerLength,
     innerWidth,
     turns,
+    parallelWires = 1,
     branchesPerPhase,
     coilsPerBranch,
   } = input;
   const errors = validatePositive(
-    input,
-    ['wireDiameter', 'outerLength', 'outerWidth', 'innerLength', 'innerWidth', 'turns', 'branchesPerPhase', 'coilsPerBranch'],
-    ['turns', 'branchesPerPhase', 'coilsPerBranch'],
+    { ...input, parallelWires },
+    ['wireDiameter', 'outerLength', 'outerWidth', 'innerLength', 'innerWidth', 'turns', 'parallelWires', 'branchesPerPhase', 'coilsPerBranch'],
+    ['turns', 'parallelWires', 'branchesPerPhase', 'coilsPerBranch'],
   );
   const material = getMaterial(input.material, errors);
   if (Object.keys(errors).length > 0) {
@@ -57,14 +74,16 @@ export function calculateMotorCoil(input) {
   }
 
   const area = PI_MOTOR * (wireDiameter / 2) ** 2;
+  const effectiveArea = area * parallelWires;
   const outerTurnLength = 2 * (outerLength + outerWidth);
   const innerTurnLength = 2 * (innerLength + innerWidth);
   const averageTurnLength = (outerTurnLength + innerTurnLength) / 2;
   const length = turns * averageTurnLength;
-  const coilResistance = material.resistivity * length / area / 1e6;
+  const totalWireLength = length * parallelWires;
+  const coilResistance = material.resistivity * length / effectiveArea / 1e6;
   const phaseResistance = coilResistance * coilsPerBranch / branchesPerPhase;
   const lineToLineResistance = 2 * phaseResistance;
-  const coilWeight = area * length * material.densityKgPerCubicMillimeter;
+  const coilWeight = area * totalWireLength * material.densityKgPerCubicMillimeter;
   const totalWeight = coilWeight * 3 * branchesPerPhase * coilsPerBranch;
 
   return {
@@ -72,10 +91,12 @@ export function calculateMotorCoil(input) {
     errors: {},
     result: {
       area,
+      effectiveArea,
       outerTurnLength,
       innerTurnLength,
       averageTurnLength,
       length,
+      totalWireLength,
       coilResistance,
       phaseResistance,
       lineToLineResistance,
